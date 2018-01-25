@@ -8,7 +8,7 @@ struct RTRS_CTX {
 	BIGNUM *g;
 	EC_GROUP *curve;
 };
-extern int RTRS_init(struct RTRS_CTX *ctx);
+extern struct RTRS_CTX *RTRS_init();
 extern void RTRS_free(struct RTRS_CTX *ctx);
-extern int RTRS_keygen(struct RTRS_CTX *ctx, BIGNUM **sk, BIGNUM *ki, BIGNUM **pk);
+extern int RTRS_keygen(struct RTRS_CTX *ctx, BIGNUM **sk, BIGNUM **ki, BIGNUM **pk);
 #endif

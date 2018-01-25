@@ -2,9 +2,9 @@
 #include <stdlib.h>
 #include "rtrs.h"
 
-int RTRS_init(struct RTRS_CTX *ctx)
+struct RTRS_CTX *RTRS_init()
 {
-	ctx = malloc(sizeof(struct RTRS_CTX));
+	struct RTRS_CTX *ctx = malloc(sizeof(struct RTRS_CTX));
 	ctx->bnctx = BN_CTX_new();
 	ctx->q = BN_new(); 
 	ctx->g = BN_new();
@@ -37,7 +37,10 @@ int RTRS_init(struct RTRS_CTX *ctx)
 	BN_hex2bn(&curve_p, "7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFED");
 	ctx->curve = EC_GROUP_new(EC_GFp_mont_method());
 	EC_GROUP_set_curve_GFp(ctx->curve, curve_p, curve_a, curve_b, ctx->bnctx);
-	return 1;
+	BN_free(curve_a);
+	BN_free(curve_b);
+	BN_free(curve_p);
+	return ctx;
 }
 
 void RTRS_free(struct RTRS_CTX *ctx)

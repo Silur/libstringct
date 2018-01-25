@@ -2,7 +2,7 @@
 .SUFFIXES:
 
 CC = gcc
-CFLAGS = -pedantic -O3 -Wall -Wextra -Werror
+CFLAGS = -pedantic -Wall -Wextra -Werror
 LDFLAGS = -lcrypto -shared -fPIC
 
 all: keygen.o rtrs.o
@@ -10,6 +10,12 @@ all: keygen.o rtrs.o
 
 rtrs.o: rtrs.c
 keygen.o: keygen.c
+
+debug: CFLAGS += -DDEBUG -g -fsanitize=address
+debug: all
+
+test: debug test.c
+	$(CC) -o test -g $(CFLAGS) test.c -L. -lasan -lrtrs -lcrypto && LD_LIBRARY_PATH=. ./test
 
 clean:
 	rm *.o *.so
