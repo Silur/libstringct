@@ -50,7 +50,8 @@ RTRS_challenge_serialize(struct RTRS_CTX *ctx, struct RTRS_challenge *c,
 	for(i=0; i<c->pk_rows; i++)
 		for(j=0; i<c->pk_cols; i++)
 		{
-			convert_point(c->pk[i][j]);
+			convert_point(c->pk[i][j][0]);
+			convert_point(c->pk[i][j][0]);
 		}
 	for(i=0; i<c->co_len; i++)
 	{

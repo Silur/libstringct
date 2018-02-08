@@ -4,6 +4,8 @@
 #include <errno.h>
 #include <openssl/bn.h>
 #include <openssl/ec.h>
+#include <openssl/rand.h>
+#include <openssl/err.h>
 
 int 
 RTRS_keygen(struct RTRS_CTX *ctx, BIGNUM **sk, EC_POINT **ki, EC_POINT **pk)
@@ -13,20 +15,18 @@ RTRS_keygen(struct RTRS_CTX *ctx, BIGNUM **sk, EC_POINT **ki, EC_POINT **pk)
 	*ki = EC_POINT_new(ctx->curve);
  	pk[0] = EC_POINT_new(ctx->curve);
 	pk[1] = EC_POINT_new(ctx->curve);
-	FILE *fd = fopen("/dev/urandom", "r");
-	if(!fd)
-	{
-		perror("error opening rand source");
-		return 0;
-	}
 	unsigned char r[2][32];
-	if(fread(r, 2, 32, fd)<64)
+	int i;
+	for(i=0; i<2; i++)
 	{
-		fclose(fd);
-		perror("error reading rand source");
-		return 0;
+		if(!RAND_bytes(r[i], 32)) 
+		{
+			char *errstr = malloc(256);
+			ERR_error_string_n(ERR_get_error(), errstr, 256);
+			fprintf(stderr, "error while random number generation: %s", errstr);
+			return 0;
+		}
 	}
-	fclose(fd);
 	BN_bin2bn(r[0], 32, sk[0]);
 	BN_bin2bn(r[1], 32, sk[1]);
 	EC_POINT *g = (EC_POINT*)EC_GROUP_get0_generator(ctx->curve);
