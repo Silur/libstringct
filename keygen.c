@@ -40,6 +40,6 @@ RTRS_keygen(struct RTRS_CTX *ctx, BIGNUM **sk, EC_POINT **ki, EC_POINT **pk)
 
 	EC_POINT_free(g);
 	EC_POINT_free(h);
-	EC_POINT_free(hpowr);
+	EC_POINT_clear_free(hpowr);
 	return 1;
 }

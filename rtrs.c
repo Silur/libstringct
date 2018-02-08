@@ -30,9 +30,10 @@ struct RTRS_CTX *RTRS_init(BIGNUM *a, BIGNUM *b, BIGNUM *p,
 	EC_POINT_free(g);
 	BN_free(q);
 	BN_free(order);
-	
+
 	return ctx;
 }
+
 
 void RTRS_free(struct RTRS_CTX *ctx)
 {

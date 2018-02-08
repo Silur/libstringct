@@ -8,8 +8,12 @@ struct RTRS_CTX {
 };
 struct RTRS_challenge {
 	EC_POINT **ki;
-	EC_POINT **pk;
+	size_t ki_len;
+	EC_POINT ***pk[2];
+	size_t pk_rows;
+	size_t pk_cols;
 	EC_POINT **co;
+	size_t co_len;
 	EC_POINT *co1;
 	unsigned long l; // inputs
 	unsigned long n; // ring size
@@ -19,5 +23,9 @@ extern struct RTRS_CTX *RTRS_init(BIGNUM *a, BIGNUM *b, BIGNUM *p,
 		int montgomery);
 extern void RTRS_free(struct RTRS_CTX *ctx);
 extern int RTRS_keygen(struct RTRS_CTX *ctx, BIGNUM **sk, EC_POINT **ki, EC_POINT **pk);
-extern void RTRS_sub(struct RTRS_CTX *ctx, struct RTRS_challenge *fin, EC_POINT **ret);
+extern void RTRS_sub(struct RTRS_CTX *ctx, struct RTRS_challenge *fin, 
+		EC_POINT ***ret, BIGNUM ***f_ret);
+extern BIGNUM *RTRS_hash(char *data, size_t len);
+extern int RTRS_challenge_serialize(struct RTRS_CTX *ctx, struct RTRS_challenge *c, 
+		char **ret, char *M, size_t m_len);
 #endif
