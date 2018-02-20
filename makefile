@@ -5,13 +5,15 @@ CC = gcc
 CFLAGS = -pedantic -Wall -Wextra -Werror
 LDFLAGS = -lcrypto -shared -fPIC
 
-all: keygen.o rtrs.o echash.o sub.o
+all: keygen.o rtrs.o echash.o sub.o bootle.o spend.o
 	$(CC) -o librtrs.so $(CFLAGS) $^ $(LDFLAGS)
 
 rtrs.o: rtrs.c
 keygen.o: keygen.c
 echash.o: echash.c
 sub.o: sub.c
+spend.o: spend.c
+bootle.o: bootle.c
 
 debug: CFLAGS += -DDEBUG -g -fsanitize=address
 debug: all

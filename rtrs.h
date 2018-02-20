@@ -2,10 +2,12 @@
 #define __RTRS_H
 #include <openssl/bn.h>
 #include <openssl/ec.h>
+
 struct RTRS_CTX {
 	BN_CTX *bnctx;
 	EC_GROUP *curve;
 };
+
 struct RTRS_challenge {
 	EC_POINT **ki;
 	size_t ki_len;
@@ -15,6 +17,8 @@ struct RTRS_challenge {
 	EC_POINT **co;
 	size_t co_len;
 	EC_POINT *co1;
+	char *M;
+	size_t m_len;
 	unsigned long l; // inputs
 	unsigned long n; // ring size
 };

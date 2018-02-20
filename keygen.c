@@ -32,7 +32,7 @@ RTRS_keygen(struct RTRS_CTX *ctx, BIGNUM **sk, EC_POINT **ki, EC_POINT **pk)
 	EC_POINT *g = (EC_POINT*)EC_GROUP_get0_generator(ctx->curve);
 
 	EC_POINT_mul(ctx->curve, *ki, 0, g, sk[1], ctx->bnctx);
-	EC_POINT *h = EC_POINT_dup(g, ctx->curve); // FIXME where to get H from?
+	EC_POINT *h = EC_POINT_dup(g, ctx->curve);
 	EC_POINT *hpowr = EC_POINT_new(ctx->curve);
 	EC_POINT_mul(ctx->curve, hpowr, 0, h, sk[0], ctx->bnctx);
 	EC_POINT_add(ctx->curve, pk[0], *ki, hpowr, ctx->bnctx);
