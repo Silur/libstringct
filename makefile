@@ -3,7 +3,7 @@
 
 CC = gcc
 CFLAGS = -pedantic -Wall -Wextra -Werror
-LDFLAGS = -lcrypto -shared -fPIC
+LDFLAGS = -lcrypto -lm -shared -fPIC
 
 all: keygen.o rtrs.o echash.o sub.o bootle.o spend.o
 	$(CC) -o librtrs.so $(CFLAGS) $^ $(LDFLAGS)

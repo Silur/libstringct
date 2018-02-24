@@ -1,7 +1,9 @@
 #include <openssl/bn.h>
 #include <openssl/ec.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
+#include <math.h>
 #include "bootle.h"
 #include "echash.h"
 
@@ -14,15 +16,66 @@ static EC_POINT *COMb(EC_GROUP *group, BN_CTX *bnctx,
 	EC_POINT_mul(group, A, 0, g, r, bnctx);
 
 	size_t i, j;
+	EC_POINT *gn = EC_POINT_new(group);
+	EC_POINT *gnh = EC_POINT_new(group);
+	BIGNUM *t = BN_new();
+	unsigned char *gnbuf;
 	for(i=0; i<m; i++)
 	{
 		for(j=0; j<n; j++)
 		{
-			// TODO lookup point hash in a map and add it to A
-			BN_print_fp(stdout, x[i][j]); // HACK
+			BN_set_word(t, i*n+j+1);
+			EC_POINT_mul(group, gn, 0, g, t, bnctx);
+			int gnbuf_len = EC_POINT_point2buf(group, gn, 
+				POINT_CONVERSION_UNCOMPRESSED, &gnbuf, bnctx);
+			BIGNUM *h = BN_hash((char*)gnbuf, gnbuf_len);
+			EC_POINT_bn2point(group, h, gnh, bnctx);
+			EC_POINT_mul(group, gnh, 0, gnh, x[i][j], bnctx); // TODO check whether gnh can be used as param
+			EC_POINT_add(group, A, A, gnh, bnctx);
 		}
 	}
+	if(gnbuf) free(gnbuf);
+	EC_POINT_clear_free(gn);
+	EC_POINT_clear_free(gnh);
+	BN_clear_free(t);
 	return A;
+}
+
+static int *ndecompose(int base, int n, int dexp)
+{
+	int *ret = malloc(sizeof(int)*dexp);
+	int i;
+	int basepow;
+	for(i=dexp-1; i>=0; i--)
+	{
+		basepow = (int)pow((double)base,(double)i);
+		ret[i] = n/basepow;
+		n-=basepow*ret[i];
+	}
+	return ret;
+}
+
+static BIGNUM ***COEFS(BIGNUM ***a, int n, int m, int asterisk)
+{
+	int ring_size = (int)(pow((double)n, (double)m));
+	int *asterisk_seq = ndecompose(n, asterisk, m);
+
+	BIGNUM ***ret = malloc(sizeof(BIGNUM**)*ring_size);
+	int i,j;
+	for(i=0; i<ring_size; i++)
+	{
+		int *kseq = ndecompose(n, i, m);
+		ret[i] = malloc(sizeof(BIGNUM*)*2);
+		ret[i][0] = a[0][kseq[0]];
+		asterisk_seq[0] == kseq[0] ? BN_one(ret[i][1]) : BN_zero(ret[i][1]);
+		for(j=1; j<m; j++)
+		{
+			// TODO COEFPROD
+		}
+	}
+	// TODO trim ringsize scalars
+	
+	return ret;
 }
 
 struct BOOTLE_SIGMA1 *
@@ -105,7 +158,7 @@ BOOTLE_SIGMA1_new(EC_GROUP *group, BN_CTX *bnctx,
 	memcpy(buf+Alen, Cbuf, Clen);
 	memcpy(buf+Alen+Clen, Dbuf, Dlen);
 
-	BIGNUM *x = EC_hash(buf, Alen + Clen + Dlen);
+	BIGNUM *x = BN_hash(buf, Alen + Clen + Dlen);
 
 	BIGNUM ***f = malloc(sizeof(BIGNUM**)*m);
 	for(i=0; i<m; i++)
@@ -147,7 +200,8 @@ BOOTLE_SIGMA1_new(EC_GROUP *group, BN_CTX *bnctx,
 	ret->za = zA;
 	ret->zc = zC;
 	ret->a = a;
-	
+	ret->a_n = m;
+	ret->a_m = n;
 	BN_clear_free(rA);
 	BN_clear_free(rC);
 	BN_clear_free(rD);
@@ -174,5 +228,140 @@ BOOTLE_SIGMA1_new(EC_GROUP *group, BN_CTX *bnctx,
 	free(Cbuf);
 	free(Dbuf);
 	free(buf);
+	return ret;
+}
+
+struct BOOTLE_SIGMA2 *BOOTLE_SIGMA2_new(EC_GROUP *group, BN_CTX *bnctx,
+		EC_POINT ***co, int asterisk, BIGNUM *r, int dbase, int dexp)
+{
+	int i, j;
+	int ring_size = (int)pow((double)dbase, (double)dexp);
+	if(ring_size<0)
+	{
+		fprintf(stderr, "ring size overflow, try lowering decomposition params!\n");
+		return 0;
+	}
+	BIGNUM **u = malloc(sizeof(BIGNUM*)*dexp);
+	for(i=0; i<dexp; i++)
+	{
+		u[i] = BN_new();
+		BN_rand(u[i], 32, BN_RAND_TOP_ANY, BN_RAND_BOTTOM_ANY);
+	}
+
+	BIGNUM *rB = BN_new();
+	BN_rand(rB, 32, BN_RAND_TOP_ANY, BN_RAND_BOTTOM_ANY);
+
+	int *asterisk_seq = ndecompose(dbase, asterisk, dexp);
+
+	BIGNUM ***D = malloc(sizeof(BIGNUM**)*dexp);
+	for(i=0; i<dexp; i++)
+	{
+		D[i] = malloc(sizeof(BIGNUM*)*dbase);
+		for(j=0; j<dbase; j++)
+		{
+			D[i][j] = BN_new();
+			asterisk_seq[i] == j ? BN_one(D[i][j]) : BN_zero(D[i][j]);
+		}
+	}
+
+	EC_POINT *B = COMb(group, bnctx, D, dexp, dbase, rB);
+	struct BOOTLE_SIGMA1 *P = BOOTLE_SIGMA1_new(group, bnctx, D, dexp, dbase, rB);
+
+	BIGNUM ***coefs = COEFS(P->a, P->a_n, P->a_m,  asterisk);
+
+	EC_POINT ***G = malloc(sizeof(EC_POINT**)*dexp);
+	const EC_POINT *g = EC_GROUP_get0_generator(group);
+	
+	unsigned char *one = malloc(BN_num_bytes(BN_value_one()));
+	BIGNUM *hashone = BN_hash((char*)one, BN_num_bytes(BN_value_one()));
+	BN_bn2bin(BN_value_one(), one);
+	EC_POINT *econe =	EC_POINT_new(group);
+	EC_POINT_bn2point(group, hashone, econe, bnctx);
+	EC_POINT *t1 = EC_POINT_new(group);
+	EC_POINT *t2 = EC_POINT_new(group);
+	for(i=0; i<dexp; i++)
+	{
+		G[i] = malloc(sizeof(EC_POINT*)*2);
+		EC_POINT_mul(group, t1, 0, econe, u[i], bnctx);
+		EC_POINT_add(group, G[i][0], t1, g, bnctx);
+		EC_POINT_mul(group, G[i][0], 0, g, u[i], bnctx);
+
+		for(j=0; j<ring_size; j++)
+		{
+			EC_POINT_mul(group, t1, 0, co[j][0], coefs[j][i], bnctx);
+			EC_POINT_mul(group, t2, 0, co[j][1], coefs[j][i], bnctx);
+			EC_POINT_add(group, G[i][0], G[i][0], t1, bnctx);
+			EC_POINT_add(group, G[i][1], G[i][1], t2, bnctx);
+		}
+	}
+	
+	unsigned char *Pa;
+	unsigned char *Pc;
+	unsigned char *Pd;
+	int Pa_len = EC_POINT_point2buf(group, P->A, 
+				POINT_CONVERSION_UNCOMPRESSED, &Pa, bnctx);
+	int Pc_len = EC_POINT_point2buf(group, P->C, 
+				POINT_CONVERSION_UNCOMPRESSED, &Pc, bnctx);
+	int Pd_len = EC_POINT_point2buf(group, P->D, 
+				POINT_CONVERSION_UNCOMPRESSED, &Pd, bnctx);
+	char *bytes = malloc(Pa_len + Pc_len + Pd_len);
+	memcpy(bytes, Pa, Pa_len);
+	memcpy(bytes+Pa_len, Pc, Pc_len);
+	memcpy(bytes+Pa_len+Pc_len, Pd, Pd_len);
+	free(Pa);
+	free(Pc);
+	free(Pd);
+	BIGNUM *x1 = BN_hash(bytes, Pa_len + Pc_len + Pd_len);
+	BIGNUM *z = BN_new();
+	BIGNUM *t3 = BN_new();
+	BIGNUM *t4 = BN_new();
+	BN_set_word(t3, dexp);
+	BN_exp(t4, x1, t3, bnctx);
+	BN_mul(z, r, t4, bnctx);
+
+	for(i=0; i<dexp; i++)
+	{
+		BN_set_word(t4, i);
+		BN_exp(t3, x1, t4, bnctx);
+		BN_mul(t3, u[i], t3, bnctx);
+		BN_sub(z, z, t3);
+	}
+	
+	struct BOOTLE_SIGMA2 *ret = malloc(sizeof(struct BOOTLE_SIGMA2));
+	if(!ret)
+	{
+		perror("memory allocation error: ");
+		return 0;
+	}
+	ret->sig1 = P;
+	ret->B = B;
+	ret->G = G;
+	ret->z = z;
+
+	// cleanup
+	for(i=0; i<dexp; i++)
+	{
+		for(j=0; j<dbase; j++)
+		{
+			BN_clear_free(D[i][j]);
+			BN_clear_free(coefs[i][j]);
+		}
+		free(D[i]);
+		free(u[i]);
+		free(coefs[i]);
+	}
+	EC_POINT_clear_free(econe);
+	EC_POINT_clear_free(t1);
+	EC_POINT_clear_free(t2);
+	BN_clear_free(rB);
+	BN_clear_free(hashone);
+	BN_clear_free(t3);
+	BN_clear_free(t4);
+	BN_clear_free(x1);
+	free(asterisk_seq);
+	free(D);
+	free(coefs);
+	free(one);
+	free(bytes);
 	return ret;
 }

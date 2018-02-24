@@ -3,7 +3,7 @@
 #include <openssl/bn.h>
 #include "echash.h"
 
-BIGNUM *EC_hash(char *data, size_t len)
+BIGNUM *BN_hash(char *data, size_t len)
 {
 	BIGNUM *ret = 0;
 	unsigned char *norm = malloc(32);
