@@ -55,6 +55,25 @@ static int *ndecompose(int base, int n, int dexp)
 	return ret;
 }
 
+static BIGNUM **COEFPROD(BIGNUM **c, int clen, BIGNUM **d, int dlen)
+{
+	int maxlen = dlen ^ ((clen ^ dlen) & -(clen < dlen));
+	int rlen = 2*maxlen-1;
+	BIGNUM **ret = malloc(sizeof(BIGNUM*)*rlen);
+	int i;
+	int j;
+	BIGNUM *t = BN_new();
+	for(i=0; i<rlen; i++) BN_zero(ret[i]);
+	for(i=0; i<maxlen; i++)
+		for(j=0; j<maxlen; j++)
+		{
+			
+			BN_mul(t, c[i], d[i], 0);
+			BN_add(ret[i+j], ret[i+j], t);
+		}
+	return ret;
+}
+
 static BIGNUM ***COEFS(BIGNUM ***a, int n, int m, int asterisk)
 {
 	int ring_size = (int)(pow((double)n, (double)m));
@@ -68,12 +87,23 @@ static BIGNUM ***COEFS(BIGNUM ***a, int n, int m, int asterisk)
 		ret[i] = malloc(sizeof(BIGNUM*)*2);
 		ret[i][0] = a[0][kseq[0]];
 		asterisk_seq[0] == kseq[0] ? BN_one(ret[i][1]) : BN_zero(ret[i][1]);
+
+		BIGNUM **cprodparam = malloc(2*sizeof(BIGNUM*));
 		for(j=1; j<m; j++)
 		{
-			// TODO COEFPROD
+			cprodparam[0] = BN_dup(a[j][kseq[j]]);
+			asterisk_seq[j] == kseq[j] ? BN_one(cprodparam[1]) : BN_zero(cprodparam[1]);
+			ret[i] = COEFPROD(ret[i], m, cprodparam, 2);
 		}
 	}
-	// TODO trim ringsize scalars
+	
+	for(i=0; i<ring_size; i++)
+	{
+		for(j=0; j<ring_size; j++)
+		{
+			if(i<m) ret[i][j] = a[i][j];
+		}
+	}
 	
 	return ret;
 }

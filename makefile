@@ -3,7 +3,8 @@
 
 CC = gcc
 CFLAGS = -pedantic -Wall -Wextra -Werror
-LDFLAGS = -lcrypto -lm -shared -fPIC
+CFLAGS += -DFORTIFY_SOURCE=2 -fstack-protector-strong
+LDFLAGS = -lcrypto -lm -shared -fPIC -Wl,-z,relro,-z,now
 
 all: keygen.o rtrs.o echash.o sub.o bootle.o spend.o
 	$(CC) -o librtrs.so $(CFLAGS) $^ $(LDFLAGS)
