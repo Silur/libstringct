@@ -19,9 +19,11 @@ struct RTRS_challenge {
 	EC_POINT *co1;
 	char *M;
 	size_t m_len;
+	int iasterisk;
 	unsigned long l; // inputs
 	unsigned long n; // ring size
 };
+
 extern struct RTRS_CTX *RTRS_init(BIGNUM *a, BIGNUM *b, BIGNUM *p, 
 		char *generator, char *coefficient, 
 		int montgomery);
@@ -32,4 +34,5 @@ extern void RTRS_sub(struct RTRS_CTX *ctx, struct RTRS_challenge *fin,
 extern BIGNUM *RTRS_hash(char *data, size_t len);
 extern int RTRS_challenge_serialize(struct RTRS_CTX *ctx, struct RTRS_challenge *c, 
 		char **ret, char *M, size_t m_len);
+extern int RTRS_spend(struct RTRS_CTX *ctx, BIGNUM ***sk, int sklen, BIGNUM *s, struct RTRS_challenge *f, int d[2]);
 #endif
