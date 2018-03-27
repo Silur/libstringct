@@ -8,7 +8,7 @@ struct RTRS_CTX {
 	EC_GROUP *curve;
 };
 
-struct RTRS_challenge {
+struct RTRS_comm {
 	EC_POINT **ki;
 	size_t ki_len;
 	EC_POINT ***pk[2];
@@ -29,10 +29,10 @@ extern struct RTRS_CTX *RTRS_init(BIGNUM *a, BIGNUM *b, BIGNUM *p,
 		int montgomery);
 extern void RTRS_free(struct RTRS_CTX *ctx);
 extern int RTRS_keygen(struct RTRS_CTX *ctx, BIGNUM **sk, EC_POINT **ki, EC_POINT **pk);
-extern void RTRS_sub(struct RTRS_CTX *ctx, struct RTRS_challenge *fin, 
+extern void RTRS_sub(struct RTRS_CTX *ctx, struct RTRS_comm *fin, 
 		EC_POINT ***ret, BIGNUM ***f_ret);
 extern BIGNUM *RTRS_hash(char *data, size_t len);
-extern int RTRS_challenge_serialize(struct RTRS_CTX *ctx, struct RTRS_challenge *c, 
+extern int RTRS_comm_serialize(struct RTRS_CTX *ctx, struct RTRS_comm *c, 
 		char **ret, char *M, size_t m_len);
-extern int RTRS_spend(struct RTRS_CTX *ctx, BIGNUM ***sk, int sklen, BIGNUM *s, struct RTRS_challenge *f, int d[2]);
+extern int RTRS_spend(struct RTRS_CTX *ctx, BIGNUM ***sk, int sklen, BIGNUM *s, struct RTRS_comm *f, int d[2]);
 #endif

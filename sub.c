@@ -5,7 +5,7 @@
 
 
 extern void 
-RTRS_sub(struct RTRS_CTX *ctx, struct RTRS_challenge *fin, 
+RTRS_sub(struct RTRS_CTX *ctx, struct RTRS_comm *fin, 
 		EC_POINT ***ret, BIGNUM ***f_ret)
 {
 	EC_POINT ***pkz = malloc(sizeof(EC_POINT**)*fin->l);
@@ -22,7 +22,7 @@ RTRS_sub(struct RTRS_CTX *ctx, struct RTRS_challenge *fin,
 		int ki_len = EC_POINT_point2buf(ctx->curve, fin->ki[j], 
 				POINT_CONVERSION_UNCOMPRESSED, &ki_buf, ctx->bnctx);
 		char *ctx_serialized;
-		int challenge_len = RTRS_challenge_serialize(ctx, fin, &ctx_serialized, 0, 0);
+		int challenge_len = RTRS_comm_serialize(ctx, fin, &ctx_serialized, 0, 0);
 		memcpy(to_hash, ki_buf, ki_len);
 		memcpy(to_hash+ki_len, ctx_serialized, challenge_len);
 		memcpy(to_hash+ki_len+challenge_len, &j, 8);

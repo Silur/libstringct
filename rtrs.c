@@ -45,7 +45,7 @@ void RTRS_free(struct RTRS_CTX *ctx)
 }
 
 int
-RTRS_challenge_serialize(struct RTRS_CTX *ctx, struct RTRS_challenge *c,
+RTRS_comm_serialize(struct RTRS_CTX *ctx, struct RTRS_comm *c,
 	 	char **ret, char *M, size_t m_len)
 {
 #define convert_point(p) { \

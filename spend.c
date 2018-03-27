@@ -4,7 +4,7 @@
 #include <openssl/bn.h>
 
 int 
-RTRS_spend(struct RTRS_CTX *ctx, BIGNUM ***sk, int sklen, BIGNUM *s, struct RTRS_challenge *f, int d[2])
+RTRS_spend(struct RTRS_CTX *ctx, BIGNUM ***sk, int sklen, BIGNUM *s, struct RTRS_comm *f, int d[2])
 {
 	const EC_POINT *g = EC_GROUP_get0_generator(ctx->curve);
 	EC_POINT *co1 = EC_POINT_new(ctx->curve);

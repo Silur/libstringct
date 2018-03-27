@@ -28,7 +28,7 @@ static EC_POINT *COMb(EC_GROUP *group, BN_CTX *bnctx,
 			EC_POINT_mul(group, gn, 0, g, t, bnctx);
 			int gnbuf_len = EC_POINT_point2buf(group, gn, 
 				POINT_CONVERSION_UNCOMPRESSED, &gnbuf, bnctx);
-			BIGNUM *h = BN_hash((char*)gnbuf, gnbuf_len);
+			BIGNUM *h = BN_hash(gnbuf, gnbuf_len);
 			EC_POINT_bn2point(group, h, gnh, bnctx);
 			EC_POINT_mul(group, gnh, 0, gnh, x[i][j], bnctx); // TODO check whether gnh can be used as param
 			EC_POINT_add(group, A, A, gnh, bnctx);
@@ -182,7 +182,7 @@ BOOTLE_SIGMA1_new(EC_GROUP *group, BN_CTX *bnctx,
 	size_t Dlen = EC_POINT_point2buf(group, D,
 				POINT_CONVERSION_UNCOMPRESSED, &Dbuf, bnctx);
 	
-	char *buf = malloc(Alen + Clen + Dlen);
+	unsigned char *buf = malloc(Alen + Clen + Dlen);
 
 	memcpy(buf, Abuf, Alen);
 	memcpy(buf+Alen, Cbuf, Clen);
@@ -303,7 +303,7 @@ struct BOOTLE_SIGMA2 *BOOTLE_SIGMA2_new(EC_GROUP *group, BN_CTX *bnctx,
 	const EC_POINT *g = EC_GROUP_get0_generator(group);
 	
 	unsigned char *one = malloc(BN_num_bytes(BN_value_one()));
-	BIGNUM *hashone = BN_hash((char*)one, BN_num_bytes(BN_value_one()));
+	BIGNUM *hashone = BN_hash(one, BN_num_bytes(BN_value_one()));
 	BN_bn2bin(BN_value_one(), one);
 	EC_POINT *econe =	EC_POINT_new(group);
 	EC_POINT_bn2point(group, hashone, econe, bnctx);
@@ -334,7 +334,7 @@ struct BOOTLE_SIGMA2 *BOOTLE_SIGMA2_new(EC_GROUP *group, BN_CTX *bnctx,
 				POINT_CONVERSION_UNCOMPRESSED, &Pc, bnctx);
 	int Pd_len = EC_POINT_point2buf(group, P->D, 
 				POINT_CONVERSION_UNCOMPRESSED, &Pd, bnctx);
-	char *bytes = malloc(Pa_len + Pc_len + Pd_len);
+	unsigned char *bytes = malloc(Pa_len + Pc_len + Pd_len);
 	memcpy(bytes, Pa, Pa_len);
 	memcpy(bytes+Pa_len, Pc, Pc_len);
 	memcpy(bytes+Pa_len+Pc_len, Pd, Pd_len);
