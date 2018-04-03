@@ -395,3 +395,119 @@ struct BOOTLE_SIGMA2 *BOOTLE_SIGMA2_new(EC_GROUP *group, BN_CTX *bnctx,
 	free(bytes);
 	return ret;
 }
+
+size_t BOOTLE_SIGMA1_serialize(unsigned char **ret, struct BOOTLE_SIGMA1 *sig1, int dbase, int dexp)
+{
+	int i;
+	int j;
+	size_t retlen = 0;
+	unsigned char *t;
+	unsigned char *rt;
+	size_t rtlen;
+
+	rtlen = EC_POINT_point2buf(sig1->curve, sig1->A,
+			POINT_CONVERSION_UNCOMPRESSED, &t, 0);
+	retlen += rtlen;
+	rt = realloc(*ret, retlen);
+	if(!rt) goto reallocerr;
+	memcpy(*ret, t, rtlen);
+
+	rtlen = EC_POINT_point2buf(sig1->curve, sig1->C,
+			POINT_CONVERSION_UNCOMPRESSED, &t, 0);
+	retlen += rtlen;
+	rt = realloc(*ret, retlen);
+	if(!rt) goto reallocerr;
+	memcpy(*ret, t, rtlen);
+
+	rtlen = EC_POINT_point2buf(sig1->curve, sig1->D,
+			POINT_CONVERSION_UNCOMPRESSED, &t, 0);
+	retlen += rtlen;
+	rt = realloc(*ret, retlen);
+	if(!rt) goto reallocerr;
+	memcpy(*ret, t, rtlen);
+
+	for(i=0; i<dbase; i++)
+	{
+		for(j=0; j<dexp; j++)
+		{
+			BIGNUM *fij = sig1->trimmed_challenge[i][j];
+			rt = realloc(*ret+retlen, retlen+BN_num_bytes(fij));
+			if(!rt) goto reallocerr;
+			BN_bn2bin(fij, *ret+retlen);
+			retlen+=BN_num_bytes(fij);
+		}
+	}
+	
+	free(t);
+	rtlen = BN_num_bytes(sig1->za);
+	t = malloc(rtlen);
+	rt = realloc(*ret, retlen+rtlen);
+ 	if(!rt) goto reallocerr;
+	BN_bn2bin(sig1->za, t);
+	memcpy(*ret+retlen, t, rtlen);
+	retlen += rtlen;
+
+
+	free(t);
+	rtlen = BN_num_bytes(sig1->zc);
+	t = malloc(rtlen);
+	rt = realloc(*ret, retlen+rtlen);
+ 	if(!rt) goto reallocerr;
+	BN_bn2bin(sig1->zc, t);
+	memcpy(*ret+retlen, t, rtlen);
+	retlen += rtlen;
+	return retlen;
+reallocerr:
+	perror("memory allocation error");
+	return 0;
+}
+
+size_t BOOTLE_SIGMA2_serialize(unsigned char **ret, struct BOOTLE_SIGMA2 *sig2, int dbase, int dexp)
+{
+	int i;
+	size_t retlen = 0;
+	unsigned char *t;
+	unsigned char *rt;
+	size_t rtlen = BOOTLE_SIGMA1_serialize(&t, sig2->sig1, dbase, dexp);
+	if(rtlen == 0) return 0; // TODO
+	*ret = malloc(rtlen);
+	memcpy(*ret, t, rtlen);
+	free(t); t=0;
+	rtlen = EC_POINT_point2buf(sig2->sig1->curve, sig2->B,
+			POINT_CONVERSION_UNCOMPRESSED, &t, 0);
+	retlen += rtlen;
+	rt = realloc(*ret, retlen);
+	if(!rt) goto reallocerr;
+	memcpy(*ret, t, rtlen);
+	for(i=0; i<dexp; i++)
+	{
+		free(t);
+		rtlen = EC_POINT_point2buf(sig2->sig1->curve, sig2->G[i][0],
+				POINT_CONVERSION_UNCOMPRESSED, &t, 0);
+		retlen += rtlen;
+		rt = realloc(*ret, retlen);
+		if(!rt) goto reallocerr;
+		memcpy(*ret, t, rtlen);
+
+		free(t);
+		rtlen = EC_POINT_point2buf(sig2->sig1->curve, sig2->G[i][1],
+				POINT_CONVERSION_UNCOMPRESSED, &t, 0);
+		retlen += rtlen;
+		rt = realloc(*ret, retlen);
+		if(!rt) goto reallocerr;
+		memcpy(*ret, t, rtlen);
+	}
+	
+	free(t);
+	rtlen = BN_num_bytes(sig2->z);
+	t = malloc(rtlen);
+	rt = realloc(*ret, retlen+rtlen);
+ 	if(!rt) goto reallocerr;
+	BN_bn2bin(sig2->z, t);
+	memcpy(*ret+retlen, t, rtlen);
+	retlen += rtlen;
+	return retlen;
+reallocerr:
+	perror("memory allocation error");
+	return 0;
+}

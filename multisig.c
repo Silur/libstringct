@@ -3,7 +3,7 @@
 #include <string.h>
 
 static EC_POINT **
-sortkeys(EC_GROUP *group, EC_POINT **keys, unsigned long len)
+sortkeys(EC_GROUP *group, EC_POINT **keys, unsigned int len)
 {
 	unsigned long i, j;
 	EC_POINT *t;
@@ -61,9 +61,9 @@ RTRS_MS_keygen(EC_GROUP *group, EC_POINT **pubkey, BIGNUM **privkey)
 	return 1;
 }
 
-unsigned char *
-RTRS_MS_sign(EC_GROUP *group, unsigned char *msg, unsigned long msg_len,
-		EC_POINT **pubkeys, BIGNUM **privkeys, unsigned long klen)
+size_t
+RTRS_MS_sign(unsigned char **ret, EC_GROUP *group, unsigned char *msg, unsigned long msg_len,
+		EC_POINT **pubkeys, BIGNUM **privkeys, unsigned int klen)
 {
 	unsigned long i;
 	unsigned char *hash;
@@ -134,9 +134,73 @@ RTRS_MS_sign(EC_GROUP *group, unsigned char *msg, unsigned long msg_len,
 		BN_add(s_array[i], r_array[i], s_array[i]);
 		BN_add(s_sum, s_sum, s_array[i]);
 	}
-	unsigned char *ret = malloc(Rbuf_len + BN_num_bytes(s_sum));
-	memcpy(ret, Rbuf, Rbuf_len);
-	memcpy(ret, s_sum, BN_num_bytes(s_sum));
-	return ret;
+	size_t retlen = Rbuf_len + BN_num_bytes(s_sum) + sizeof(int);
+	*ret = malloc(retlen);
+	memcpy(*ret, &Rbuf_len, sizeof(int));
+	memcpy(*ret, Rbuf, Rbuf_len);
+	memcpy(*ret, s_sum, BN_num_bytes(s_sum));
+	return retlen;
+}
 
+
+int
+RTRS_MS_verify(EC_GROUP *group, unsigned char *msg, unsigned long len, EC_POINT **pubkeys, unsigned int pklen, unsigned char *signature, unsigned long slen)
+{
+	EC_POINT **sorted = sortkeys(group, pubkeys, pklen);
+	unsigned char *xastbuf = 0;
+	int xastlen = 0;
+	unsigned char *t;
+	unsigned char *r;
+	size_t tlen;
+	unsigned int i;
+	for(i=0; i<pklen; i++)
+	{
+		tlen = EC_POINT_point2buf(group, sorted[i],
+				POINT_CONVERSION_UNCOMPRESSED, &t, 0);
+		r = realloc(xastbuf, xastlen + tlen);
+		if (!r)
+		{
+			perror("memory allocation error ");
+			free(xastbuf);
+			return(0);
+		}
+		memcpy(xastbuf+xastlen, t, tlen);
+		xastlen += tlen;
+	}
+	BIGNUM **c = malloc(sizeof(BIGNUM*)*pklen);
+	EC_POINT *R = EC_POINT_new(group);
+	BIGNUM *s = BN_new();
+	int *rlen = malloc(sizeof(int));
+	memcpy(rlen, signature, sizeof(int));
+	signature+=sizeof(int);
+	EC_POINT_oct2point(group, R, signature, *rlen, 0);
+	BN_bin2bn(signature+*rlen, slen-*rlen, s);
+	
+	EC_POINT *Xi;
+	unsigned char *Xibuf;
+	for(i=0; i<pklen; i++)
+	{
+		Xi = EC_POINT_dup(pubkeys[i], group);
+		size_t Xibuflen = EC_POINT_point2buf(group, Xi,
+				POINT_CONVERSION_UNCOMPRESSED, &Xibuf, 0);
+		unsigned char *hashed = malloc(Xibuflen + *rlen + xastlen + len);
+		memcpy(hashed, Xibuf, Xibuflen);
+		memcpy(hashed+Xibuflen, signature, *rlen);
+		memcpy(hashed+Xibuflen+*rlen, xastbuf, xastlen);
+		memcpy(hashed+Xibuflen+*rlen+xastlen, msg, len);
+		c[i] = BN_hash(hashed, Xibuflen+*rlen+xastlen+len);
+		free(hashed);
+	}
+	
+	const EC_POINT *g = EC_GROUP_get0_generator(group);
+	EC_POINT *sg = EC_POINT_new(group);
+	EC_POINT *sg1 = EC_POINT_dup(R, group);
+	EC_POINT_mul(group, sg, 0, g, s, 0);
+	EC_POINT *Xc = EC_POINT_new(group);
+	for(i=0; i<pklen; i++)
+	{
+		EC_POINT_mul(group, Xc, 0, pubkeys[i], c[i], 0);
+		EC_POINT_add(group, sg1, sg1, Xc, 0);
+	}
+	return EC_POINT_cmp(group, sg, sg1, 0);
 }

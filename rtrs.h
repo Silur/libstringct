@@ -34,5 +34,5 @@ extern void RTRS_sub(struct RTRS_CTX *ctx, struct RTRS_comm *fin,
 extern BIGNUM *RTRS_hash(char *data, size_t len);
 extern int RTRS_comm_serialize(struct RTRS_CTX *ctx, struct RTRS_comm *c, 
 		char **ret, char *M, size_t m_len);
-extern int RTRS_spend(struct RTRS_CTX *ctx, BIGNUM ***sk, int sklen, BIGNUM *s, struct RTRS_comm *f, int d[2]);
+extern size_t RTRS_spend(unsigned char **ret, struct RTRS_CTX *ctx, BIGNUM ***sk, int sklen, BIGNUM *s, struct RTRS_comm *f, int d[2]);
 #endif

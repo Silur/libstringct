@@ -3,8 +3,10 @@
 
 #include <openssl/ec.h>
 #include <openssl/bn.h>
+#include <stdlib.h>
 
 struct BOOTLE_SIGMA1 {
+	EC_GROUP *curve;
 	EC_POINT *A;
 	EC_POINT *C;
 	EC_POINT *D;
@@ -27,7 +29,7 @@ struct BOOTLE_SIGMA1 *BOOTLE_SIGMA1_new(EC_GROUP *group, BN_CTX *bnctx,
 		BIGNUM ***b, size_t m, size_t n, BIGNUM *r);
 struct BOOTLE_SIGMA2 *BOOTLE_SIGMA2_new(EC_GROUP *group, BN_CTX *bnctx,
 		EC_POINT ***co, int asterisk, BIGNUM *r, int dbase, int dexp);
-char *BOOTLE_SIGMA1_serialize(struct BOOTLE_SIGMA1 *sig1, int dbase, int dexp);
-char *BOOTLE_SIGMA2_serialize(struct BOOTLE_SIGMA2 *sig2, int dbase, int dexp);
+size_t BOOTLE_SIGMA1_serialize(unsigned char **ret, struct BOOTLE_SIGMA1 *sig1, int dbase, int dexp);
+size_t BOOTLE_SIGMA2_serialize(unsigned char **ret, struct BOOTLE_SIGMA2 *sig2, int dbase, int dexp);
 
 #endif
