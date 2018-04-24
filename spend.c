@@ -34,7 +34,7 @@ RTRS_spend(unsigned char **ret, struct RTRS_CTX *ctx, BIGNUM ***sk, int sklen, B
 	}
 
 	unsigned char *sig2buf;
-	size_t sig2buflen = BOOTLE_SIGMA2_serialize(&sig2buf, sig2, d[0], d[1]);
+	uint32_t sig2buflen = BOOTLE_SIGMA2_serialize(&sig2buf, sig2, d[0], d[1]);
 	
 	
 	EC_POINT **pubkeys = malloc(sizeof(EC_POINT*)*sklen);
@@ -45,20 +45,24 @@ RTRS_spend(unsigned char **ret, struct RTRS_CTX *ctx, BIGNUM ***sk, int sklen, B
 	}
 	
 	unsigned char *msig;
-	size_t msig_len = RTRS_MS_sign(&msig, ctx->curve, sig2buf, sig2buflen,
+	uint32_t msig_len = RTRS_MS_sign(&msig, ctx->curve, sig2buf, sig2buflen,
 		pubkeys, privkeys, sklen);
 	
 	
 	/* serialize everyting (dbase, dexp, co1, sig2, msig) into a buffer */
 	unsigned char *t;	
-	size_t co1len = EC_POINT_point2buf(ctx->curve, co1,
+	uint32_t co1len = EC_POINT_point2buf(ctx->curve, co1,
 			POINT_CONVERSION_UNCOMPRESSED, &t, 0);
-	size_t retlen = (2*sizeof(int) + sig2buflen + msig_len + co1len);
+	uint32_t retlen = (128 + sig2buflen + msig_len + co1len);
 	*ret = malloc(retlen);
-	memcpy(*ret, &d[0], sizeof(int));
-	memcpy(*ret, &d[1], sizeof(int));
+	uint32_t dfix[2] = {d[0], d[1]};
+	memcpy(*ret, &dfix[0], 32);
+	memcpy(*ret, &dfix[1], 32);
+	memcpy(*ret, &co1len, 32);
 	memcpy(*ret, t, co1len);
+	memcpy(*ret, &sig2buflen, 32);
 	memcpy(*ret, sig2buf, sig2buflen);
+	memcpy(*ret, &msig_len, 32);
 	memcpy(*ret, msig, msig_len);
 	return retlen;
 }

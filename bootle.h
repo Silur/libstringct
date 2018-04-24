@@ -31,5 +31,5 @@ struct BOOTLE_SIGMA2 *BOOTLE_SIGMA2_new(EC_GROUP *group, BN_CTX *bnctx,
 		EC_POINT ***co, int asterisk, BIGNUM *r, int dbase, int dexp);
 size_t BOOTLE_SIGMA1_serialize(unsigned char **ret, struct BOOTLE_SIGMA1 *sig1, int dbase, int dexp);
 size_t BOOTLE_SIGMA2_serialize(unsigned char **ret, struct BOOTLE_SIGMA2 *sig2, int dbase, int dexp);
-
+EC_POINT *COMb(EC_GROUP *group, BN_CTX *bnctx, BIGNUM ***x, size_t m, size_t n, BIGNUM *r);
 #endif

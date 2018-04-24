@@ -38,10 +38,9 @@ struct RTRS_CTX *RTRS_init(BIGNUM *a, BIGNUM *b, BIGNUM *p,
 
 void RTRS_free(struct RTRS_CTX *ctx)
 {
+	EC_GROUP_free(ctx->curve);
 	BN_CTX_free(ctx->bnctx);
-	EC_GROUP_clear_free(ctx->curve);
 	free(ctx);
-	ctx = 0;
 }
 
 int

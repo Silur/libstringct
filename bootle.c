@@ -7,7 +7,7 @@
 #include "bootle.h"
 #include "echash.h"
 
-static EC_POINT *COMb(EC_GROUP *group, BN_CTX *bnctx, 
+EC_POINT *COMb(EC_GROUP *group, BN_CTX *bnctx, 
 		BIGNUM ***x, size_t m, size_t n, BIGNUM *r)
 {
 	EC_POINT *A = EC_POINT_new(group);

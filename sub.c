@@ -2,7 +2,7 @@
 #include <string.h>
 #include <openssl/bn.h>
 #include "rtrs.h"
-
+#include "echash.h"
 
 extern void 
 RTRS_sub(struct RTRS_CTX *ctx, struct RTRS_comm *fin, 
@@ -12,7 +12,7 @@ RTRS_sub(struct RTRS_CTX *ctx, struct RTRS_comm *fin,
 	EC_POINT *inf = EC_POINT_new(ctx->curve);
 	EC_POINT_set_to_infinity(ctx->curve, inf);
 	unsigned long i, j;
-	char *to_hash = calloc(8192, 1); // TODO more accurate size
+	unsigned char *to_hash = calloc(8192, 1); // TODO more accurate size
 	for(j=0; j<fin->l; j++)
 	{
 		pkz[j] = malloc(sizeof(EC_POINT*)*2);
@@ -26,7 +26,7 @@ RTRS_sub(struct RTRS_CTX *ctx, struct RTRS_comm *fin,
 		memcpy(to_hash, ki_buf, ki_len);
 		memcpy(to_hash+ki_len, ctx_serialized, challenge_len);
 		memcpy(to_hash+ki_len+challenge_len, &j, 8);
-		*f_ret[j] = RTRS_hash(to_hash, ki_len+challenge_len+8);
+		*f_ret[j] = BN_hash(to_hash, ki_len+challenge_len+8);
 	}
 	EC_POINT *t1 = EC_POINT_new(ctx->curve);
 	EC_POINT *t2 = EC_POINT_new(ctx->curve);
@@ -58,6 +58,5 @@ RTRS_sub(struct RTRS_CTX *ctx, struct RTRS_comm *fin,
 	EC_POINT_clear_free(t1);
 	EC_POINT_clear_free(t2);
 	free(pkz);
-	pkz = 0;
 	EC_POINT_free(inf);
 }
