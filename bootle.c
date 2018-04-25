@@ -41,7 +41,7 @@ EC_POINT *COMb(EC_GROUP *group, BN_CTX *bnctx,
 	return A;
 }
 
-static int *ndecompose(int base, int n, int dexp)
+int *ndecompose(int base, int n, int dexp)
 {
 	int *ret = malloc(sizeof(int)*dexp);
 	int i;

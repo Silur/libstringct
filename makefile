@@ -6,7 +6,7 @@ CFLAGS = -pedantic -Wall -Wextra -Werror -fPIC
 CFLAGS += -DFORTIFY_SOURCE=2 -fstack-protector-strong
 LDFLAGS = -lcrypto -lm -shared -fPIC -Wl,-z,relro,-z,now
 
-all: keygen.o rtrs.o echash.o sub.o bootle.o spend.o multisig.o 
+all: keygen.o rtrs.o echash.o sub.o bootle.o spend.o multisig.o verify.o
 	$(CC) -o librtrs.so $(CFLAGS) $^ $(LDFLAGS)
 
 rtrs.o: rtrs.c
