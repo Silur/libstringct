@@ -4,34 +4,24 @@
 #include "rtrs.h"
 
 struct RTRS_CTX *RTRS_init(BIGNUM *a, BIGNUM *b, BIGNUM *p, 
-		char *generator, char *coefficient, 
-		int montgomery)
+		char *generator, char *order,  char *cofactor)
 {
 	struct RTRS_CTX *ctx = malloc(sizeof(struct RTRS_CTX));
 	ctx->bnctx = BN_CTX_new();
-	if(montgomery) 
-	{
-		ctx->curve = EC_GROUP_new(EC_GFp_mont_method());
-	}
-	else
-	{
-		ctx->curve = EC_GROUP_new(EC_GFp_simple_method());
-	}
+    ctx->curve = EC_GROUP_new(EC_GFp_mont_method());
 
 	EC_GROUP_set_curve_GFp(ctx->curve, p, a, b, ctx->bnctx);
 
 	BIGNUM *q = BN_new(); 
 	EC_POINT *g = EC_POINT_new(ctx->curve);
-	BN_hex2bn(&q, coefficient);
+	BN_hex2bn(&q, cofactor);
 	EC_POINT_hex2point(ctx->curve, generator, g, ctx->bnctx);
-	BIGNUM *order = BN_new();
-	BN_hex2bn(&order, "10000000000000000000000000000000000000000000000000000000000000000");
-	EC_GROUP_set_generator(ctx->curve, g, order, q);
-
-	EC_POINT_free(g);
-	BN_free(q);
-	BN_free(order);
-
+	BIGNUM *o = BN_new();
+	BN_hex2bn(&o, order);
+	EC_GROUP_set_generator(ctx->curve, g, o, q);
+    BN_free(q);
+    BN_free(o);
+    EC_POINT_free(g);
 	return ctx;
 }
 

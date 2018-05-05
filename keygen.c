@@ -38,7 +38,6 @@ RTRS_keygen(struct RTRS_CTX *ctx, BIGNUM **sk, EC_POINT **ki, EC_POINT **pk)
 	EC_POINT_add(ctx->curve, pk[0], *ki, hpowr, ctx->bnctx);
 	EC_POINT_mul(ctx->curve, pk[1], 0, g, sk[1], ctx->bnctx);
 
-	EC_POINT_free(g);
 	EC_POINT_free(h);
 	EC_POINT_clear_free(hpowr);
 	return 1;

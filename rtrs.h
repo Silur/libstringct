@@ -9,8 +9,7 @@ struct RTRS_CTX {
 };
 
 struct RTRS_comm {
-	EC_POINT **ki;
-	size_t ki_len;
+	EC_POINT *ki;
 	EC_POINT ***pk[2];
 	size_t pk_rows;
 	size_t pk_cols;
@@ -25,8 +24,7 @@ struct RTRS_comm {
 };
 
 extern struct RTRS_CTX *RTRS_init(BIGNUM *a, BIGNUM *b, BIGNUM *p, 
-		char *generator, char *coefficient, 
-		int montgomery);
+		char *generator, char *order, char *coefficient);
 extern void RTRS_free(struct RTRS_CTX *ctx);
 extern int RTRS_keygen(struct RTRS_CTX *ctx, BIGNUM **sk, EC_POINT **ki, EC_POINT **pk);
 extern void RTRS_sub(struct RTRS_CTX *ctx, struct RTRS_comm *fin, 

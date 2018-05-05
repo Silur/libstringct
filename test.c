@@ -10,12 +10,17 @@ int main(void)
 	BIGNUM *a = BN_new();
 	BIGNUM *b = BN_new();
 	BIGNUM *p = BN_new();
-	int is_montgomery = 1;
 
-	BN_set_word(a, 486662);
-	BN_zero(b);
-	BN_hex2bn(&p, "7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFED");
-	struct RTRS_CTX *ctx = RTRS_init(a, b, p, "\xde\xad", "\xbe\xef", is_montgomery);
+	BN_zero(a);
+	BN_set_word(b, 7);
+	BN_hex2bn(&p, "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F");
+	char *generator = "0479BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D9\
+		               59F2815B16F81798483ADA7726A3C4655DA4FBFC0E1108A8FD\
+                       17B448A68554199C47D08FFB10D4B8";
+	char *order = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8C\
+		           D0364141";
+	char *cofactor = "01";
+	struct RTRS_CTX *ctx = RTRS_init(a, b, p, generator, order, cofactor);
 	
 	BIGNUM **sk = malloc(2*sizeof(BIGNUM*));
 	EC_POINT *ki = 0;
