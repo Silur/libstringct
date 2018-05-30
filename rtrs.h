@@ -9,7 +9,8 @@ struct RTRS_CTX {
 };
 
 struct RTRS_comm {
-	EC_POINT *ki;
+	EC_POINT **ki;
+	size_t ki_len;
 	EC_POINT ***pk[2];
 	size_t pk_rows;
 	size_t pk_cols;

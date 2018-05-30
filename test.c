@@ -26,14 +26,27 @@ int main(void)
 	EC_POINT *ki = 0;
 	EC_POINT **pk = malloc(2*sizeof(EC_POINT*));
 	
-	long dbase = 2;
+	long dbase = 8;
 	long dexp = 8;
-	int inputs = 2;
+	int inputs = 8;
+
+	BIGNUM ***sk = malloc(2*sizeof(BIGNUM*)*inputs);
+	EC_POINT **ki = 0;
+	EC_POINT ***pk = malloc(2*sizeof(EC_POINT*)*inputs);
 
 	printf("Ring size %lf\n Inputs: %d\n", pow(dbase, dexp), inputs);
+
 	printf("Keygen...");
 	RTRS_keygen(ctx, sk, &ki, pk);
 	puts("done");
+	
+	struct RTRS_comm comm = {
+		.ki = ki,
+		.pk = pk,
+		.pk_rows = dbase,
+		.pk_cols = dexp,
+		// TODO co
+	};
 	RTRS_free(ctx);
 	BN_free(sk[0]);
 	BN_free(sk[1]);

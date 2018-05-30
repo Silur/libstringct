@@ -148,7 +148,6 @@ int RTRS_verify(struct RTRS_CTX *ctx, struct RTRS_comm *comm, EC_POINT **kis, si
 	COMb(ctx->curve, ctx->bnctx, f1, m, n, sig2->sig1->zc);
 	if(EC_POINT_cmp(ctx->curve, check, commitment, ctx->bnctx) != 0) goto commitment_err;
 
-	// TODO validate sigma2 (409)
 	size_t ring_size = (size_t)pow((double)m,(double)n);
 	const EC_POINT *generator = EC_GROUP_get0_generator(ctx->curve);
 	EC_POINT *gpowz = EC_POINT_new(ctx->curve);

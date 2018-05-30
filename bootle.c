@@ -29,7 +29,7 @@ EC_POINT *COMb(EC_GROUP *group, BN_CTX *bnctx,
 			int gnbuf_len = EC_POINT_point2buf(group, gn, 
 				POINT_CONVERSION_UNCOMPRESSED, &gnbuf, bnctx);
 			BIGNUM *h = BN_hash(gnbuf, gnbuf_len);
-			EC_POINT_bn2point(group, h, gnh, bnctx);
+			EC_POINT_bn2point(group, h, gnh, bnctx); // TODO need ECHASH
 			EC_POINT_mul(group, gnh, 0, gnh, x[i][j], bnctx); // TODO check whether gnh can be used as param
 			EC_POINT_add(group, A, A, gnh, bnctx);
 		}
@@ -39,6 +39,25 @@ EC_POINT *COMb(EC_GROUP *group, BN_CTX *bnctx,
 	EC_POINT_clear_free(gnh);
 	BN_clear_free(t);
 	return A;
+}
+
+EC_POINT *COMp(EC_GROUP *group, BN_CTX *bnctx, BIGNUM ***x, size_t m, size_t n, BIGNUM *r)
+{
+	const EC_POINT *g = EC_GROUP_get0_generator(group);
+	EC_POINT *ret = EC_POINT_new(group);
+	EC_POINT_mul(group, ret, 0, g, r, bnctx);
+	EC_POINT *xg = EC_POINT_new(group);
+	EC_POINT *hash;
+	size_t i;
+	size_t j;
+	for(i=0; i<m; i++)
+		for(j=0; j<n; j++)
+		{
+			EC_POINT_mul(group, xg, 0, g, x[i][j], bnctx);
+		}
+	// TODO need ECHASH
+	(void)hash;
+	return ret;
 }
 
 int *ndecompose(int base, int n, int dexp)
