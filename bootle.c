@@ -34,7 +34,7 @@ EC_POINT *COMb(EC_GROUP *group, BN_CTX *bnctx,
 			EC_POINT_add(group, A, A, gnh, bnctx);
 		}
 	}
-	if(gnbuf) free(gnbuf);
+	if(gnbuf) OPENSSL_free(gnbuf);
 	EC_POINT_clear_free(gn);
 	EC_POINT_clear_free(gnh);
 	BN_clear_free(t);
@@ -62,7 +62,7 @@ EC_POINT *COMp(EC_GROUP *group, BN_CTX *bnctx, BIGNUM ***x, size_t m, size_t n, 
 
 int *ndecompose(int base, int n, int dexp)
 {
-	int *ret = malloc(sizeof(int)*dexp);
+	int *ret = OPENSSL_malloc(sizeof(int)*dexp);
 	int i;
 	int basepow;
 	for(i=dexp-1; i>=0; i--)
@@ -78,7 +78,7 @@ static BIGNUM **COEFPROD(BIGNUM **c, int clen, BIGNUM **d, int dlen)
 {
 	int maxlen = dlen ^ ((clen ^ dlen) & -(clen < dlen));
 	int rlen = 2*maxlen-1;
-	BIGNUM **ret = malloc(sizeof(BIGNUM*)*rlen);
+	BIGNUM **ret = OPENSSL_malloc(sizeof(BIGNUM*)*rlen);
 	int i;
 	int j;
 	BIGNUM *t = BN_new();
@@ -98,16 +98,16 @@ static BIGNUM ***COEFS(BIGNUM ***a, int n, int m, int asterisk)
 	int ring_size = (int)(pow((double)n, (double)m));
 	int *asterisk_seq = ndecompose(n, asterisk, m);
 
-	BIGNUM ***ret = malloc(sizeof(BIGNUM**)*ring_size);
+	BIGNUM ***ret = OPENSSL_malloc(sizeof(BIGNUM**)*ring_size);
 	int i,j;
 	for(i=0; i<ring_size; i++)
 	{
 		int *kseq = ndecompose(n, i, m);
-		ret[i] = malloc(sizeof(BIGNUM*)*2);
+		ret[i] = OPENSSL_malloc(sizeof(BIGNUM*)*2);
 		ret[i][0] = a[0][kseq[0]];
 		asterisk_seq[0] == kseq[0] ? BN_one(ret[i][1]) : BN_zero(ret[i][1]);
 
-		BIGNUM **cprodparam = malloc(2*sizeof(BIGNUM*));
+		BIGNUM **cprodparam = OPENSSL_malloc(2*sizeof(BIGNUM*));
 		for(j=1; j<m; j++)
 		{
 			cprodparam[0] = BN_dup(a[j][kseq[j]]);
@@ -139,12 +139,12 @@ BOOTLE_SIGMA1_new(EC_GROUP *group, BN_CTX *bnctx,
 	BN_rand(rC, 32, BN_RAND_TOP_ANY, BN_RAND_BOTTOM_ANY);
 	BN_rand(rD, 32, BN_RAND_TOP_ANY, BN_RAND_BOTTOM_ANY);
 
-	BIGNUM ***a = malloc(sizeof(BIGNUM**)*m);
+	BIGNUM ***a = OPENSSL_malloc(sizeof(BIGNUM**)*m);
 	size_t i = 0;
 	size_t j = 0;
 	for(i=0; i<m; i++)
 	{
-		a[i] = malloc(sizeof(BIGNUM*)*n);
+		a[i] = OPENSSL_malloc(sizeof(BIGNUM*)*n);
 		for(j=1; j<n; j++)
 		{
 			a[i][j] = BN_new();
@@ -162,16 +162,16 @@ BOOTLE_SIGMA1_new(EC_GROUP *group, BN_CTX *bnctx,
 	}
 	EC_POINT *A = COMb(group, bnctx, a, m, n, rA);
 
-	BIGNUM ***c = malloc(sizeof(BIGNUM**)*m);
-	BIGNUM ***d = malloc(sizeof(BIGNUM**)*m);
+	BIGNUM ***c = OPENSSL_malloc(sizeof(BIGNUM**)*m);
+	BIGNUM ***d = OPENSSL_malloc(sizeof(BIGNUM**)*m);
 	BIGNUM *t1 = BN_new();
 	BN_one(t1);
 	BIGNUM *t2 = BN_new();
 	BN_set_word(t1, 2);
 	for(i=0; i<m; i++)
 	{
-		c[i] = malloc(sizeof(BIGNUM*)*n);
-		d[i] = malloc(sizeof(BIGNUM*)*n);
+		c[i] = OPENSSL_malloc(sizeof(BIGNUM*)*n);
+		d[i] = OPENSSL_malloc(sizeof(BIGNUM*)*n);
 		for(j=0; i<n; j++)
 		{
 			c[i][j] = BN_new();
@@ -201,7 +201,7 @@ BOOTLE_SIGMA1_new(EC_GROUP *group, BN_CTX *bnctx,
 	size_t Dlen = EC_POINT_point2buf(group, D,
 				POINT_CONVERSION_UNCOMPRESSED, &Dbuf, bnctx);
 	
-	unsigned char *buf = malloc(Alen + Clen + Dlen);
+	unsigned char *buf = OPENSSL_malloc(Alen + Clen + Dlen);
 
 	memcpy(buf, Abuf, Alen);
 	memcpy(buf+Alen, Cbuf, Clen);
@@ -209,10 +209,10 @@ BOOTLE_SIGMA1_new(EC_GROUP *group, BN_CTX *bnctx,
 
 	BIGNUM *x = BN_hash(buf, Alen + Clen + Dlen);
 
-	BIGNUM ***f = malloc(sizeof(BIGNUM**)*m);
+	BIGNUM ***f = OPENSSL_malloc(sizeof(BIGNUM**)*m);
 	for(i=0; i<m; i++)
 	{
-		f[i] = malloc(sizeof(BIGNUM*)*n);
+		f[i] = OPENSSL_malloc(sizeof(BIGNUM*)*n);
 		for(j=0; j<n; j++)
 		{
 			f[i][j] = BN_new();
@@ -221,10 +221,10 @@ BOOTLE_SIGMA1_new(EC_GROUP *group, BN_CTX *bnctx,
 		}
 	}
 
-	BIGNUM ***f_trimmed = malloc(sizeof(BIGNUM**)*m);
+	BIGNUM ***f_trimmed = OPENSSL_malloc(sizeof(BIGNUM**)*m);
 	for(i=0; i<m; i++)
 	{
-		f[i] = malloc(sizeof(BIGNUM*)*n);
+		f[i] = OPENSSL_malloc(sizeof(BIGNUM*)*n);
 		for(j=1; j<n; j++)
 		{
 			f_trimmed[i][j-1] = BN_dup(f[i][j]);
@@ -240,7 +240,7 @@ BOOTLE_SIGMA1_new(EC_GROUP *group, BN_CTX *bnctx,
 	BN_mul(zC, rC, x, bnctx);
 	BN_add(zC, zC, rD);
 
-	struct BOOTLE_SIGMA1 *ret = malloc(sizeof(struct BOOTLE_SIGMA1));
+	struct BOOTLE_SIGMA1 *ret = OPENSSL_malloc(sizeof(struct BOOTLE_SIGMA1));
 
 	ret->A = A;	
 	ret->C = C;	
@@ -264,19 +264,19 @@ BOOTLE_SIGMA1_new(EC_GROUP *group, BN_CTX *bnctx,
 			BN_clear_free(d[i][j]);
 			BN_clear_free(f[i][j]);
 		}
-		free(c[i]);
-		free(d[i]);
-		free(f[i]);
+		OPENSSL_free(c[i]);
+		OPENSSL_free(d[i]);
+		OPENSSL_free(f[i]);
 	}
-	free(c);
-	free(d);
-	free(f);
-	free(t1);
-	free(t2);
-	free(Abuf);
-	free(Cbuf);
-	free(Dbuf);
-	free(buf);
+	OPENSSL_free(c);
+	OPENSSL_free(d);
+	OPENSSL_free(f);
+	OPENSSL_free(t1);
+	OPENSSL_free(t2);
+	OPENSSL_free(Abuf);
+	OPENSSL_free(Cbuf);
+	OPENSSL_free(Dbuf);
+	OPENSSL_free(buf);
 	return ret;
 }
 
@@ -290,7 +290,7 @@ struct BOOTLE_SIGMA2 *BOOTLE_SIGMA2_new(EC_GROUP *group, BN_CTX *bnctx,
 		fprintf(stderr, "ring size overflow, try lowering decomposition params!\n");
 		return 0;
 	}
-	BIGNUM **u = malloc(sizeof(BIGNUM*)*dexp);
+	BIGNUM **u = OPENSSL_malloc(sizeof(BIGNUM*)*dexp);
 	for(i=0; i<dexp; i++)
 	{
 		u[i] = BN_new();
@@ -302,10 +302,10 @@ struct BOOTLE_SIGMA2 *BOOTLE_SIGMA2_new(EC_GROUP *group, BN_CTX *bnctx,
 
 	int *asterisk_seq = ndecompose(dbase, asterisk, dexp);
 
-	BIGNUM ***D = malloc(sizeof(BIGNUM**)*dexp);
+	BIGNUM ***D = OPENSSL_malloc(sizeof(BIGNUM**)*dexp);
 	for(i=0; i<dexp; i++)
 	{
-		D[i] = malloc(sizeof(BIGNUM*)*dbase);
+		D[i] = OPENSSL_malloc(sizeof(BIGNUM*)*dbase);
 		for(j=0; j<dbase; j++)
 		{
 			D[i][j] = BN_new();
@@ -318,10 +318,10 @@ struct BOOTLE_SIGMA2 *BOOTLE_SIGMA2_new(EC_GROUP *group, BN_CTX *bnctx,
 
 	BIGNUM ***coefs = COEFS(P->a, P->a_n, P->a_m,  asterisk);
 
-	EC_POINT ***G = malloc(sizeof(EC_POINT**)*dexp);
+	EC_POINT ***G = OPENSSL_malloc(sizeof(EC_POINT**)*dexp);
 	const EC_POINT *g = EC_GROUP_get0_generator(group);
 	
-	unsigned char *one = malloc(BN_num_bytes(BN_value_one()));
+	unsigned char *one = OPENSSL_malloc(BN_num_bytes(BN_value_one()));
 	BIGNUM *hashone = BN_hash(one, BN_num_bytes(BN_value_one()));
 	BN_bn2bin(BN_value_one(), one);
 	EC_POINT *econe =	EC_POINT_new(group);
@@ -330,7 +330,7 @@ struct BOOTLE_SIGMA2 *BOOTLE_SIGMA2_new(EC_GROUP *group, BN_CTX *bnctx,
 	EC_POINT *t2 = EC_POINT_new(group);
 	for(i=0; i<dexp; i++)
 	{
-		G[i] = malloc(sizeof(EC_POINT*)*2);
+		G[i] = OPENSSL_malloc(sizeof(EC_POINT*)*2);
 		EC_POINT_mul(group, t1, 0, econe, u[i], bnctx);
 		EC_POINT_add(group, G[i][0], t1, g, bnctx);
 		EC_POINT_mul(group, G[i][0], 0, g, u[i], bnctx);
@@ -353,13 +353,13 @@ struct BOOTLE_SIGMA2 *BOOTLE_SIGMA2_new(EC_GROUP *group, BN_CTX *bnctx,
 				POINT_CONVERSION_UNCOMPRESSED, &Pc, bnctx);
 	int Pd_len = EC_POINT_point2buf(group, P->D, 
 				POINT_CONVERSION_UNCOMPRESSED, &Pd, bnctx);
-	unsigned char *bytes = malloc(Pa_len + Pc_len + Pd_len);
+	unsigned char *bytes = OPENSSL_malloc(Pa_len + Pc_len + Pd_len);
 	memcpy(bytes, Pa, Pa_len);
 	memcpy(bytes+Pa_len, Pc, Pc_len);
 	memcpy(bytes+Pa_len+Pc_len, Pd, Pd_len);
-	free(Pa);
-	free(Pc);
-	free(Pd);
+	OPENSSL_free(Pa);
+	OPENSSL_free(Pc);
+	OPENSSL_free(Pd);
 	BIGNUM *x1 = BN_hash(bytes, Pa_len + Pc_len + Pd_len);
 	BIGNUM *z = BN_new();
 	BIGNUM *t3 = BN_new();
@@ -376,7 +376,7 @@ struct BOOTLE_SIGMA2 *BOOTLE_SIGMA2_new(EC_GROUP *group, BN_CTX *bnctx,
 		BN_sub(z, z, t3);
 	}
 	
-	struct BOOTLE_SIGMA2 *ret = malloc(sizeof(struct BOOTLE_SIGMA2));
+	struct BOOTLE_SIGMA2 *ret = OPENSSL_malloc(sizeof(struct BOOTLE_SIGMA2));
 	if(!ret)
 	{
 		perror("memory allocation error: ");
@@ -395,9 +395,9 @@ struct BOOTLE_SIGMA2 *BOOTLE_SIGMA2_new(EC_GROUP *group, BN_CTX *bnctx,
 			BN_clear_free(D[i][j]);
 			BN_clear_free(coefs[i][j]);
 		}
-		free(D[i]);
-		free(u[i]);
-		free(coefs[i]);
+		OPENSSL_free(D[i]);
+		OPENSSL_free(u[i]);
+		OPENSSL_free(coefs[i]);
 	}
 	EC_POINT_clear_free(econe);
 	EC_POINT_clear_free(t1);
@@ -407,11 +407,11 @@ struct BOOTLE_SIGMA2 *BOOTLE_SIGMA2_new(EC_GROUP *group, BN_CTX *bnctx,
 	BN_clear_free(t3);
 	BN_clear_free(t4);
 	BN_clear_free(x1);
-	free(asterisk_seq);
-	free(D);
-	free(coefs);
-	free(one);
-	free(bytes);
+	OPENSSL_free(asterisk_seq);
+	OPENSSL_free(D);
+	OPENSSL_free(coefs);
+	OPENSSL_free(one);
+	OPENSSL_free(bytes);
 	return ret;
 }
 
@@ -457,9 +457,9 @@ size_t BOOTLE_SIGMA1_serialize(unsigned char **ret, struct BOOTLE_SIGMA1 *sig1, 
 		}
 	}
 	
-	free(t);
+	OPENSSL_free(t);
 	rtlen = BN_num_bytes(sig1->za);
-	t = malloc(rtlen);
+	t = OPENSSL_malloc(rtlen);
 	rt = realloc(*ret, retlen+rtlen);
  	if(!rt) goto reallocerr;
 	BN_bn2bin(sig1->za, t);
@@ -467,9 +467,9 @@ size_t BOOTLE_SIGMA1_serialize(unsigned char **ret, struct BOOTLE_SIGMA1 *sig1, 
 	retlen += rtlen;
 
 
-	free(t);
+	OPENSSL_free(t);
 	rtlen = BN_num_bytes(sig1->zc);
-	t = malloc(rtlen);
+	t = OPENSSL_malloc(rtlen);
 	rt = realloc(*ret, retlen+rtlen);
  	if(!rt) goto reallocerr;
 	BN_bn2bin(sig1->zc, t);
@@ -489,9 +489,9 @@ size_t BOOTLE_SIGMA2_serialize(unsigned char **ret, struct BOOTLE_SIGMA2 *sig2, 
 	unsigned char *rt;
 	size_t rtlen = BOOTLE_SIGMA1_serialize(&t, sig2->sig1, dbase, dexp);
 	if(rtlen == 0) return 0; // TODO
-	*ret = malloc(rtlen);
+	*ret = OPENSSL_malloc(rtlen);
 	memcpy(*ret, t, rtlen);
-	free(t); t=0;
+	OPENSSL_free(t); t=0;
 	rtlen = EC_POINT_point2buf(sig2->sig1->curve, sig2->B,
 			POINT_CONVERSION_UNCOMPRESSED, &t, 0);
 	retlen += rtlen;
@@ -500,7 +500,7 @@ size_t BOOTLE_SIGMA2_serialize(unsigned char **ret, struct BOOTLE_SIGMA2 *sig2, 
 	memcpy(*ret, t, rtlen);
 	for(i=0; i<dexp; i++)
 	{
-		free(t);
+		OPENSSL_free(t);
 		rtlen = EC_POINT_point2buf(sig2->sig1->curve, sig2->G[i][0],
 				POINT_CONVERSION_UNCOMPRESSED, &t, 0);
 		retlen += rtlen;
@@ -508,7 +508,7 @@ size_t BOOTLE_SIGMA2_serialize(unsigned char **ret, struct BOOTLE_SIGMA2 *sig2, 
 		if(!rt) goto reallocerr;
 		memcpy(*ret, t, rtlen);
 
-		free(t);
+		OPENSSL_free(t);
 		rtlen = EC_POINT_point2buf(sig2->sig1->curve, sig2->G[i][1],
 				POINT_CONVERSION_UNCOMPRESSED, &t, 0);
 		retlen += rtlen;
@@ -517,9 +517,9 @@ size_t BOOTLE_SIGMA2_serialize(unsigned char **ret, struct BOOTLE_SIGMA2 *sig2, 
 		memcpy(*ret, t, rtlen);
 	}
 	
-	free(t);
+	OPENSSL_free(t);
 	rtlen = BN_num_bytes(sig2->z);
-	t = malloc(rtlen);
+	t = OPENSSL_malloc(rtlen);
 	rt = realloc(*ret, retlen+rtlen);
  	if(!rt) goto reallocerr;
 	BN_bn2bin(sig2->z, t);

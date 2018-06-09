@@ -21,7 +21,7 @@ RTRS_keygen(struct RTRS_CTX *ctx, BIGNUM **sk, EC_POINT **ki, EC_POINT **pk)
 	{
 		if(!RAND_bytes(r[i], 32)) 
 		{
-			char *errstr = malloc(256);
+			char *errstr = OPENSSL_malloc(256);
 			ERR_error_string_n(ERR_get_error(), errstr, 256);
 			fprintf(stderr, "error while random number generation: %s", errstr);
 			return 0;

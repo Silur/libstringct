@@ -11,8 +11,8 @@ RTRS_spend(unsigned char **ret, struct RTRS_CTX *ctx, BIGNUM ***sk, int sklen, B
 	const EC_POINT *g = EC_GROUP_get0_generator(ctx->curve);
 	EC_POINT *co1 = EC_POINT_new(ctx->curve);
 	EC_POINT_mul(ctx->curve, co1, 0, g, s, ctx->bnctx);
-	EC_POINT ***c = malloc(sizeof(EC_POINT*)*f->n);
-	BIGNUM **fs = malloc(sizeof(BIGNUM*)*f->l);
+	EC_POINT ***c = OPENSSL_malloc(sizeof(EC_POINT*)*f->n); // FIXME
+	BIGNUM **fs = OPENSSL_malloc(sizeof(BIGNUM*)*f->l);
 	RTRS_sub(ctx, f, c, &fs);
 	BIGNUM *s1 = BN_dup(s);
 	BIGNUM *t1 = BN_new();
@@ -26,7 +26,7 @@ RTRS_spend(unsigned char **ret, struct RTRS_CTX *ctx, BIGNUM ***sk, int sklen, B
 
 	struct BOOTLE_SIGMA2 *sig2 = BOOTLE_SIGMA2_new(ctx->curve, ctx->bnctx, c, f->iasterisk, s1, d[0], d[1]);
 
-	BIGNUM **privkeys = malloc(sizeof(BIGNUM*)*sklen);
+	BIGNUM **privkeys = OPENSSL_malloc(sizeof(BIGNUM*)*sklen);
 
 	for(i=0; i<sklen; i++)
 	{
@@ -37,7 +37,7 @@ RTRS_spend(unsigned char **ret, struct RTRS_CTX *ctx, BIGNUM ***sk, int sklen, B
 	uint32_t sig2buflen = BOOTLE_SIGMA2_serialize(&sig2buf, sig2, d[0], d[1]);
 	
 	
-	EC_POINT **pubkeys = malloc(sizeof(EC_POINT*)*sklen);
+	EC_POINT **pubkeys = OPENSSL_malloc(sizeof(EC_POINT*)*sklen);
 	for(i=0; i<sklen; i++)
 	{
 		pubkeys[i] = EC_POINT_new(ctx->curve);
@@ -54,7 +54,7 @@ RTRS_spend(unsigned char **ret, struct RTRS_CTX *ctx, BIGNUM ***sk, int sklen, B
 	uint32_t co1len = EC_POINT_point2buf(ctx->curve, co1,
 			POINT_CONVERSION_UNCOMPRESSED, &t, 0);
 	uint32_t retlen = (128 + sig2buflen + msig_len + co1len);
-	*ret = malloc(retlen);
+	*ret = OPENSSL_malloc(retlen);
 	uint32_t dfix[2] = {d[0], d[1]};
 	memcpy(*ret, &dfix[0], 32);
 	memcpy(*ret, &dfix[1], 32);
@@ -64,5 +64,19 @@ RTRS_spend(unsigned char **ret, struct RTRS_CTX *ctx, BIGNUM ***sk, int sklen, B
 	memcpy(*ret, sig2buf, sig2buflen);
 	memcpy(*ret, &msig_len, 32);
 	memcpy(*ret, msig, msig_len);
+	OPENSSL_free(t);
+	OPENSSL_free(msig);
+	for(i=0; i<sklen; i++) EC_POINT_free(pubkeys[i]);
+	OPENSSL_free(pubkeys);
+	OPENSSL_free(sig2buf);
+	for(i=0; i<sklen; i++) BN_free(privkeys[i]);
+	OPENSSL_free(privkeys);
+	// TODO cleaup method for BOOTLE_SIGMA2
+	BN_free(t1);
+	BN_free(s1);
+	unsigned long j;
+	for(j=0; j<f->l; j++) BN_free(fs[i]);
+	OPENSSL_free(fs);
+	OPENSSL_free(c); // FIXME leak
 	return retlen;
 }

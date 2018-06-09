@@ -8,14 +8,14 @@ extern void
 RTRS_sub(struct RTRS_CTX *ctx, struct RTRS_comm *fin, 
 		EC_POINT ***ret, BIGNUM ***f_ret)
 {
-	EC_POINT ***pkz = malloc(sizeof(EC_POINT**)*fin->l);
+	EC_POINT ***pkz = OPENSSL_malloc(sizeof(EC_POINT**)*fin->l);
 	EC_POINT *inf = EC_POINT_new(ctx->curve);
 	EC_POINT_set_to_infinity(ctx->curve, inf);
 	unsigned long i, j;
 	unsigned char *to_hash = calloc(8192, 1); // TODO more accurate size
 	for(j=0; j<fin->l; j++)
 	{
-		pkz[j] = malloc(sizeof(EC_POINT*)*2);
+		pkz[j] = OPENSSL_malloc(sizeof(EC_POINT*)*2);
 		pkz[j][0] = fin->ki[j];
 		pkz[j][1] = inf;
 		unsigned char *ki_buf;
@@ -33,7 +33,7 @@ RTRS_sub(struct RTRS_CTX *ctx, struct RTRS_comm *fin,
 
 	for(i=0; i<fin->n; i++)
 	{
-		ret[i] = malloc(2*sizeof(EC_POINT*));
+		ret[i] = OPENSSL_malloc(2*sizeof(EC_POINT*));
 		ret[i][0] = fin->co[i];
 		ret[i][1] = fin->co1;
 		for(j=0; j<fin->l; j++)
@@ -44,7 +44,7 @@ RTRS_sub(struct RTRS_CTX *ctx, struct RTRS_comm *fin,
 			EC_POINT_add(ctx->curve, t1, fin->pk[j][i][0], t1, ctx->bnctx);
 			EC_POINT_add(ctx->curve, t2, fin->pk[j][i][1], t2, ctx->bnctx);
 			EC_POINT_mul(ctx->curve, t2, 0, t1, *f_ret[j], ctx->bnctx);
-			EC_POINT_add(ctx->curve, *ret[i], *ret[i], t2, ctx->bnctx);
+			EC_POINT_add(ctx->curve, *ret[i], *ret[i], t2, ctx->bnctx); // FIXME
 		}
 	}
 
@@ -52,11 +52,11 @@ RTRS_sub(struct RTRS_CTX *ctx, struct RTRS_comm *fin,
 	{
 		EC_POINT_clear_free(pkz[i][0]);
 		EC_POINT_clear_free(pkz[i][1]);
-		free(pkz[i]);
+		OPENSSL_free(pkz[i]);
 	}
 
 	EC_POINT_clear_free(t1);
 	EC_POINT_clear_free(t2);
-	free(pkz);
+	OPENSSL_free(pkz);
 	EC_POINT_free(inf);
 }

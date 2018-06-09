@@ -6,7 +6,7 @@
 struct RTRS_CTX *RTRS_init(BIGNUM *a, BIGNUM *b, BIGNUM *p, 
 		char *generator, char *order,  char *cofactor)
 {
-	struct RTRS_CTX *ctx = malloc(sizeof(struct RTRS_CTX));
+	struct RTRS_CTX *ctx = OPENSSL_malloc(sizeof(struct RTRS_CTX));
 	ctx->bnctx = BN_CTX_new();
     ctx->curve = EC_GROUP_new(EC_GFp_mont_method());
 
@@ -30,7 +30,7 @@ void RTRS_free(struct RTRS_CTX *ctx)
 {
 	EC_GROUP_free(ctx->curve);
 	BN_CTX_free(ctx->bnctx);
-	free(ctx);
+	OPENSSL_free(ctx);
 }
 
 int
@@ -42,10 +42,10 @@ RTRS_comm_serialize(struct RTRS_CTX *ctx, struct RTRS_comm *c,
 				POINT_CONVERSION_UNCOMPRESSED, &t, ctx->bnctx); \
 		memcpy(*ret+pos, t, len); \
 		pos += len; \
-		free(t); \
+		OPENSSL_free(t); \
 }
 
-	*ret = malloc(4096);
+	*ret = OPENSSL_malloc(4096);
 	size_t i = 0, j = 0;
 	int pos = 0;
 	int len = 0;

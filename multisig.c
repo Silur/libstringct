@@ -84,7 +84,7 @@ RTRS_MS_sign(unsigned char **ret, EC_GROUP *group, unsigned char *msg, unsigned 
 		if(!rhash)
 		{
 			perror("memory allocation error ");
-			free(hash);
+			OPENSSL_free(hash);
 			return 0;
 		}
 		hash = rhash;
@@ -92,7 +92,7 @@ RTRS_MS_sign(unsigned char **ret, EC_GROUP *group, unsigned char *msg, unsigned 
 	}
 	BIGNUM *xasterisk = BN_hash(hash, hlen);
 
-	BIGNUM **r_array = malloc(sizeof(BIGNUM*)*klen);
+	BIGNUM **r_array = OPENSSL_malloc(sizeof(BIGNUM*)*klen);
 	BIGNUM *r_sum = BN_new();
 	BN_zero(r_sum);
 	for(i=0; i<klen; i++)
@@ -105,25 +105,25 @@ RTRS_MS_sign(unsigned char **ret, EC_GROUP *group, unsigned char *msg, unsigned 
 	EC_POINT *R = EC_POINT_new(group);
 	EC_POINT_mul(group, R, 0, G, r_sum, 0);
 
-	BIGNUM **c = malloc(sizeof(BIGNUM*)*klen);
-	BIGNUM **s_array = malloc(sizeof(BIGNUM*)*klen);
+	BIGNUM **c = OPENSSL_malloc(sizeof(BIGNUM*)*klen);
+	BIGNUM **s_array = OPENSSL_malloc(sizeof(BIGNUM*)*klen);
 	BIGNUM *s_sum = BN_new();
 	BN_zero(s_sum);
-	free(hash); hash = 0;
-	free(t);	t = 0;
+	OPENSSL_free(hash); hash = 0;
+	OPENSSL_free(t);	t = 0;
 	hlen = 0;
 	unsigned char *XIbuf;
 	unsigned char *Rbuf;
 	int Rbuf_len = EC_POINT_point2buf(group, R,
 			POINT_CONVERSION_UNCOMPRESSED, &Rbuf, 0);
-	unsigned char *Xastbuf = malloc(BN_num_bytes(xasterisk));
+	unsigned char *Xastbuf = OPENSSL_malloc(BN_num_bytes(xasterisk));
 	int Xastbuf_len = BN_bn2bin(xasterisk, Xastbuf);
 	for(i=0; i<klen; i++)
 	{
 		int tlen = EC_POINT_point2buf(group, sorted_pubkeys[i],
 				POINT_CONVERSION_UNCOMPRESSED, &XIbuf, 0);
 		hlen = Rbuf_len + Xastbuf_len + tlen + msg_len;
-		hash = malloc(hlen);
+		hash = OPENSSL_malloc(hlen);
 		memcpy(hash, XIbuf, tlen);
 		memcpy(hash+tlen, Rbuf, Rbuf_len);
 		memcpy(hash+tlen+Rbuf_len, Xastbuf, Xastbuf_len);
@@ -135,7 +135,7 @@ RTRS_MS_sign(unsigned char **ret, EC_GROUP *group, unsigned char *msg, unsigned 
 		BN_add(s_sum, s_sum, s_array[i]);
 	}
 	size_t retlen = Rbuf_len + BN_num_bytes(s_sum) + sizeof(int);
-	*ret = malloc(retlen);
+	*ret = OPENSSL_malloc(retlen);
 	memcpy(*ret, &Rbuf_len, sizeof(int));
 	memcpy(*ret, Rbuf, Rbuf_len);
 	memcpy(*ret, s_sum, BN_num_bytes(s_sum));
@@ -161,16 +161,16 @@ RTRS_MS_verify(EC_GROUP *group, unsigned char *msg, unsigned long len, EC_POINT 
 		if (!r)
 		{
 			perror("memory allocation error ");
-			free(xastbuf);
+			OPENSSL_free(xastbuf);
 			return(0);
 		}
 		memcpy(xastbuf+xastlen, t, tlen);
 		xastlen += tlen;
 	}
-	BIGNUM **c = malloc(sizeof(BIGNUM*)*pklen);
+	BIGNUM **c = OPENSSL_malloc(sizeof(BIGNUM*)*pklen);
 	EC_POINT *R = EC_POINT_new(group);
 	BIGNUM *s = BN_new();
-	int *rlen = malloc(sizeof(int));
+	int *rlen = OPENSSL_malloc(sizeof(int));
 	memcpy(rlen, signature, sizeof(int));
 	signature+=sizeof(int);
 	EC_POINT_oct2point(group, R, signature, *rlen, 0);
@@ -183,13 +183,13 @@ RTRS_MS_verify(EC_GROUP *group, unsigned char *msg, unsigned long len, EC_POINT 
 		Xi = EC_POINT_dup(pubkeys[i], group);
 		size_t Xibuflen = EC_POINT_point2buf(group, Xi,
 				POINT_CONVERSION_UNCOMPRESSED, &Xibuf, 0);
-		unsigned char *hashed = malloc(Xibuflen + *rlen + xastlen + len);
+		unsigned char *hashed = OPENSSL_malloc(Xibuflen + *rlen + xastlen + len);
 		memcpy(hashed, Xibuf, Xibuflen);
 		memcpy(hashed+Xibuflen, signature, *rlen);
 		memcpy(hashed+Xibuflen+*rlen, xastbuf, xastlen);
 		memcpy(hashed+Xibuflen+*rlen+xastlen, msg, len);
 		c[i] = BN_hash(hashed, Xibuflen+*rlen+xastlen+len);
-		free(hashed);
+		OPENSSL_free(hashed);
 	}
 	
 	const EC_POINT *g = EC_GROUP_get0_generator(group);

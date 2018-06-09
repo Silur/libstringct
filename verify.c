@@ -10,8 +10,8 @@
 int RTRS_verify(struct RTRS_CTX *ctx, struct RTRS_comm *comm, EC_POINT **kis, size_t kilen, unsigned char *msg)
 {
 	int ret = 0;
-	EC_POINT ***sub_points = malloc(sizeof(EC_POINT**)*comm->pk_cols);
-	BIGNUM ***sub_scalars = malloc(sizeof(BIGNUM**)*comm->pk_cols);
+	EC_POINT ***sub_points = OPENSSL_malloc(sizeof(EC_POINT**)*comm->pk_cols);
+	BIGNUM ***sub_scalars = OPENSSL_malloc(sizeof(BIGNUM**)*comm->pk_cols);
 
 	RTRS_sub(ctx, comm, sub_points, sub_scalars);
 
@@ -26,7 +26,7 @@ int RTRS_verify(struct RTRS_CTX *ctx, struct RTRS_comm *comm, EC_POINT **kis, si
 	memcpy(&co1len, msg, 32);
 	msg += 32;
 
-	unsigned char *co1 = malloc(co1len);
+	unsigned char *co1 = OPENSSL_malloc(co1len);
 	memcpy(co1, msg, co1len);
 	msg+=co1len;
 
@@ -34,17 +34,17 @@ int RTRS_verify(struct RTRS_CTX *ctx, struct RTRS_comm *comm, EC_POINT **kis, si
 	memcpy(&sig2len, msg, 32);
 	msg += 32;
 
-	unsigned char *sig2buf = malloc(sig2len);
+	unsigned char *sig2buf = OPENSSL_malloc(sig2len);
 	memcpy(sig2buf, msg, sig2len);
 	msg+=sig2len;
-	struct BOOTLE_SIGMA2 *sig2 = malloc(sizeof(struct BOOTLE_SIGMA2));
+	struct BOOTLE_SIGMA2 *sig2 = OPENSSL_malloc(sizeof(struct BOOTLE_SIGMA2));
 	// FIXME
 	memcpy(sig2, sig2buf, sig2len);
 	uint32_t msiglen;
 	memcpy(&msiglen, msg, 32);
 	msg += 32;
 
-	unsigned char *msig = malloc(msiglen);
+	unsigned char *msig = OPENSSL_malloc(msiglen);
 	memcpy(msig, msg, msiglen);
 	msg+=msiglen;
 
@@ -65,12 +65,12 @@ int RTRS_verify(struct RTRS_CTX *ctx, struct RTRS_comm *comm, EC_POINT **kis, si
 
 	unsigned int n = sig2->sig1->a_n;
 	unsigned int m = sig2->sig1->a_m;
-	BIGNUM ***f = malloc(sizeof(BIGNUM**)*m);
+	BIGNUM ***f = OPENSSL_malloc(sizeof(BIGNUM**)*m);
 	unsigned int i;
 	unsigned int j;
 	for(j=0; j<m; j++)
 	{
-		f[j] = malloc(sizeof(BIGNUM*)*n);
+		f[j] = OPENSSL_malloc(sizeof(BIGNUM*)*n);
 		for(i=1; i<n; i++)
 		{
 			f[j][i] = BN_dup(sig2->sig1->trimmed_challenge[j][i-1]);
@@ -106,11 +106,11 @@ int RTRS_verify(struct RTRS_CTX *ctx, struct RTRS_comm *comm, EC_POINT **kis, si
 		}
 	}
 
-	BIGNUM ***f1 = malloc(sizeof(BIGNUM**)*m);
+	BIGNUM ***f1 = OPENSSL_malloc(sizeof(BIGNUM**)*m);
 	BIGNUM *bnt = BN_new();
 	for(j=0; j<m; j++)
 	{
-		f1[j] = malloc(sizeof(BIGNUM*)*n);
+		f1[j] = OPENSSL_malloc(sizeof(BIGNUM*)*n);
 		for(i=0; i<n; i++)
 		{
 			f[j][i] = BN_new();
@@ -155,7 +155,7 @@ int RTRS_verify(struct RTRS_CTX *ctx, struct RTRS_comm *comm, EC_POINT **kis, si
 	EC_POINT_mul(ctx->curve, gpowz, 0, generator, sig2->z, ctx->bnctx);
 	c[0] = gpowz;
 	c[1] = gpowz;
-	BIGNUM **g1 = malloc(sizeof(BIGNUM*)*ring_size);
+	BIGNUM **g1 = OPENSSL_malloc(sizeof(BIGNUM*)*ring_size);
 	g1[0] = BN_dup(f[0][0]);
 	for(i=1; i<m; i++)
 	{
@@ -180,7 +180,7 @@ int RTRS_verify(struct RTRS_CTX *ctx, struct RTRS_comm *comm, EC_POINT **kis, si
 		EC_POINT_mul(ctx->curve, tempc[1], 0, sub_points[0][1], g1[0], ctx->bnctx);
 		EC_POINT_add(ctx->curve, c1[0], c1[0], tempc[0], ctx->bnctx);
 		EC_POINT_add(ctx->curve, c1[1], c1[1], tempc[1], ctx->bnctx);
-		free(iseq);
+		OPENSSL_free(iseq);
 	}
 	EC_POINT_free(tempc[0]);
 	EC_POINT_free(tempc[1]);
@@ -209,7 +209,7 @@ int RTRS_verify(struct RTRS_CTX *ctx, struct RTRS_comm *comm, EC_POINT **kis, si
 	EC_POINT_free(c[0]);
 	EC_POINT_free(c[1]);
 	for(i=0; i<m; i++) BN_free(g1[i]);
-	free(g1);
+	OPENSSL_free(g1);
 	EC_POINT_free(gpowz);
 commitment_err:
 	EC_POINT_free(tc);
@@ -224,27 +224,27 @@ colsum_err:
 		{
 			BN_free(f1[i][j]);
 		}
-		free(f1[i]);
+		OPENSSL_free(f1[i]);
 	}
-	free(f1);
+	OPENSSL_free(f1);
 	BN_free(x);
 bin_err:
-	free(r);
-	free(t);
-	free(acd_bin);
+	OPENSSL_free(r);
+	OPENSSL_free(t);
+	OPENSSL_free(acd_bin);
 	for(i=0; i<m; i++)
 	{
 		for(j=0; j<n; j++)
 		{
 			BN_free(f1[i][j]);
 		}
-		free(f1[i]);
+		OPENSSL_free(f1[i]);
 	}
-	free(f);
+	OPENSSL_free(f);
 ms_err:
-	free(msig);
-	free(sig2buf);
-	free(co1);
+	OPENSSL_free(msig);
+	OPENSSL_free(sig2buf);
+	OPENSSL_free(co1);
 	for(i=0; i<m; i++)
 	{
 		for(j=0; j<n; j++)
@@ -252,10 +252,10 @@ ms_err:
 			EC_POINT_free(sub_points[i][j]);
 			BN_free(sub_scalars[i][j]);
 		}
-		free(sub_points[i]);
-		free(sub_scalars[j]);
+		OPENSSL_free(sub_points[i]);
+		OPENSSL_free(sub_scalars[j]);
 	}
-	free(sub_points);
-	free(sub_scalars);
+	OPENSSL_free(sub_points);
+	OPENSSL_free(sub_scalars);
 	return ret;
 }
