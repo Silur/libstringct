@@ -71,7 +71,7 @@ RTRS_spend(unsigned char **ret, struct RTRS_CTX *ctx, BIGNUM ***sk, int sklen, B
 	OPENSSL_free(sig2buf);
 	for(i=0; i<sklen; i++) BN_free(privkeys[i]);
 	OPENSSL_free(privkeys);
-	// TODO cleaup method for BOOTLE_SIGMA2
+	BOOTLE_SIGMA2_free(sig2);
 	BN_free(t1);
 	BN_free(s1);
 	unsigned long j;

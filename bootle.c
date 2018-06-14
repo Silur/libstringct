@@ -241,7 +241,8 @@ BOOTLE_SIGMA1_new(EC_GROUP *group, BN_CTX *bnctx,
 	BN_add(zC, zC, rD);
 
 	struct BOOTLE_SIGMA1 *ret = OPENSSL_malloc(sizeof(struct BOOTLE_SIGMA1));
-
+	
+	ret->curve = group;
 	ret->A = A;	
 	ret->C = C;	
 	ret->D = D;
@@ -529,4 +530,43 @@ size_t BOOTLE_SIGMA2_serialize(unsigned char **ret, struct BOOTLE_SIGMA2 *sig2, 
 reallocerr:
 	perror("memory allocation error");
 	return 0;
+}
+
+void
+BOOTLE_SIGMA1_free(struct BOOTLE_SIGMA1 *b)
+{
+	EC_POINT_clear_free(b->A);
+	EC_POINT_clear_free(b->C);
+	EC_POINT_clear_free(b->D);
+	int i;
+	int j;
+	for(i=0; i<b->a_n; i++)
+	{
+		for(j=0; j<b->a_m; j++)
+		{
+			BN_free(b->trimmed_challenge[i][j]);
+			BN_free(b->a[i][j]);
+		}
+		free(b->trimmed_challenge[i]);
+		free(b->a[i]);
+	}
+	free(b->trimmed_challenge);
+	free(b->a);
+}
+void
+BOOTLE_SIGMA2_free(struct BOOTLE_SIGMA2 *b)
+{
+	int i;
+	int j;
+	EC_POINT_free(b->B);
+	for(i=0; i<b->sig1->a_n; i++)
+	{
+		for(j=0; j<b->sig1->a_m; j++)
+		{
+			EC_POINT_free(b->G[i][j]);
+		}
+		free(b->G[i]);
+	}
+	free(b->G);
+	BOOTLE_SIGMA1_free(b->sig1);
 }
