@@ -13,7 +13,7 @@ EC_POINT *COMb(EC_GROUP *group, BN_CTX *bnctx,
 	EC_POINT *A = EC_POINT_new(group);
 	const EC_POINT *g = EC_GROUP_get0_generator(group);
 
-	EC_POINT_mul(group, A, 0, g, r, bnctx);
+	EC_POINT_mul(group, A, r, 0, 0, bnctx);
 
 	size_t i, j;
 	EC_POINT *gn = EC_POINT_new(group);
@@ -32,9 +32,10 @@ EC_POINT *COMb(EC_GROUP *group, BN_CTX *bnctx,
 			EC_POINT_bn2point(group, h, gnh, bnctx); // TODO need ECHASH
 			EC_POINT_mul(group, gnh, 0, gnh, x[i][j], bnctx); // TODO check whether gnh can be used as param
 			EC_POINT_add(group, A, A, gnh, bnctx);
+			BN_free(h);
+			OPENSSL_free(gnbuf);
 		}
 	}
-	if(gnbuf) OPENSSL_free(gnbuf);
 	EC_POINT_clear_free(gn);
 	EC_POINT_clear_free(gnh);
 	BN_clear_free(t);
@@ -154,6 +155,7 @@ BOOTLE_SIGMA1_new(EC_GROUP *group, BN_CTX *bnctx,
 
 	for(i=0; i<m; i++)
 	{
+		a[i][0] = BN_new();
 		BN_zero(a[i][0]);
 		for(j=1; j<n; j++)
 		{
@@ -172,7 +174,7 @@ BOOTLE_SIGMA1_new(EC_GROUP *group, BN_CTX *bnctx,
 	{
 		c[i] = OPENSSL_malloc(sizeof(BIGNUM*)*n);
 		d[i] = OPENSSL_malloc(sizeof(BIGNUM*)*n);
-		for(j=0; i<n; j++)
+		for(j=0; j<n; j++)
 		{
 			c[i][j] = BN_new();
 			d[i][j] = BN_new();
@@ -224,7 +226,7 @@ BOOTLE_SIGMA1_new(EC_GROUP *group, BN_CTX *bnctx,
 	BIGNUM ***f_trimmed = OPENSSL_malloc(sizeof(BIGNUM**)*m);
 	for(i=0; i<m; i++)
 	{
-		f[i] = OPENSSL_malloc(sizeof(BIGNUM*)*n);
+		f_trimmed[i] = OPENSSL_malloc(sizeof(BIGNUM*)*n);
 		for(j=1; j<n; j++)
 		{
 			f_trimmed[i][j-1] = BN_dup(f[i][j]);
@@ -272,8 +274,8 @@ BOOTLE_SIGMA1_new(EC_GROUP *group, BN_CTX *bnctx,
 	OPENSSL_free(c);
 	OPENSSL_free(d);
 	OPENSSL_free(f);
-	OPENSSL_free(t1);
-	OPENSSL_free(t2);
+	BN_free(t1);
+	BN_free(t2);
 	OPENSSL_free(Abuf);
 	OPENSSL_free(Cbuf);
 	OPENSSL_free(Dbuf);
@@ -431,6 +433,7 @@ size_t BOOTLE_SIGMA1_serialize(unsigned char **ret, struct BOOTLE_SIGMA1 *sig1, 
 	rt = realloc(*ret, retlen);
 	if(!rt) goto reallocerr;
 	memcpy(*ret, t, rtlen);
+	free(t);
 
 	rtlen = EC_POINT_point2buf(sig1->curve, sig1->C,
 			POINT_CONVERSION_UNCOMPRESSED, &t, 0);
@@ -438,6 +441,7 @@ size_t BOOTLE_SIGMA1_serialize(unsigned char **ret, struct BOOTLE_SIGMA1 *sig1, 
 	rt = realloc(*ret, retlen);
 	if(!rt) goto reallocerr;
 	memcpy(*ret, t, rtlen);
+	free(t);
 
 	rtlen = EC_POINT_point2buf(sig1->curve, sig1->D,
 			POINT_CONVERSION_UNCOMPRESSED, &t, 0);
@@ -445,6 +449,7 @@ size_t BOOTLE_SIGMA1_serialize(unsigned char **ret, struct BOOTLE_SIGMA1 *sig1, 
 	rt = realloc(*ret, retlen);
 	if(!rt) goto reallocerr;
 	memcpy(*ret, t, rtlen);
+	free(t);
 
 	for(i=0; i<dbase; i++)
 	{
@@ -542,17 +547,22 @@ BOOTLE_SIGMA1_free(struct BOOTLE_SIGMA1 *b)
 	int j;
 	for(i=0; i<b->a_n; i++)
 	{
-		for(j=0; j<b->a_m; j++)
+		for(j=0; j<b->a_m-1; j++)
 		{
 			BN_free(b->trimmed_challenge[i][j]);
 			BN_free(b->a[i][j]);
 		}
-		free(b->trimmed_challenge[i]);
-		free(b->a[i]);
+		BN_free(b->a[i][j]);
+		OPENSSL_free(b->trimmed_challenge[i]);
+		OPENSSL_free(b->a[i]);
 	}
-	free(b->trimmed_challenge);
-	free(b->a);
+	OPENSSL_free(b->trimmed_challenge);
+	OPENSSL_free(b->a);
+	BN_clear_free(b->za);
+	BN_clear_free(b->zc);
+	free(b);
 }
+
 void
 BOOTLE_SIGMA2_free(struct BOOTLE_SIGMA2 *b)
 {
@@ -565,8 +575,8 @@ BOOTLE_SIGMA2_free(struct BOOTLE_SIGMA2 *b)
 		{
 			EC_POINT_free(b->G[i][j]);
 		}
-		free(b->G[i]);
+		OPENSSL_free(b->G[i]);
 	}
-	free(b->G);
+	OPENSSL_free(b->G);
 	BOOTLE_SIGMA1_free(b->sig1);
 }

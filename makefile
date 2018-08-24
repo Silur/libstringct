@@ -18,7 +18,7 @@ bootle.o: bootle.c
 multisig.o: multisig.c
 verify.o: verify.c
 
-debug: CFLAGS += -DDEBUG -g -fsanitize=address
+debug: CFLAGS += -DDEBUG -g3 -O0 -fsanitize=address
 debug: all
 
 test: debug test.c

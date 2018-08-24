@@ -4,6 +4,7 @@
 #include "rtrs.h"
 #include "echash.h"
 #include "multisig.h"
+#include "bootle.h"
 
 int main(void)
 {
@@ -30,23 +31,39 @@ int main(void)
 	long dexp = 8;
 	int inputs = 8;
 
-	BIGNUM ***sk = malloc(2*sizeof(BIGNUM*)*inputs);
-	EC_POINT **ki = 0;
-	EC_POINT ***pk = malloc(2*sizeof(EC_POINT*)*inputs);
-
 	printf("Ring size %lf\n Inputs: %d\n", pow(dbase, dexp), inputs);
 
 	printf("Keygen...");
 	RTRS_keygen(ctx, sk, &ki, pk);
 	puts("done");
-	
-	struct RTRS_comm comm = {
-		.ki = ki,
-		.pk = pk,
-		.pk_rows = dbase,
-		.pk_cols = dexp,
-		// TODO co
-	};
+	// sigma1 test
+	printf("Sigma1...");
+	{
+		BIGNUM ***b = malloc(2*sizeof(BIGNUM**));
+		b[0] = malloc(2*sizeof(BIGNUM*));
+		b[1] = malloc(2*sizeof(BIGNUM*));
+		b[0][0] = BN_new();
+		b[0][1] = BN_new();
+		b[1][0] = BN_new();
+		b[1][1] = BN_new();
+		BN_one(b[0][0]);
+		BN_zero(b[0][1]);
+		BN_zero(b[1][0]);
+		BN_one(b[1][1]);
+		BIGNUM *r = BN_new();
+		BN_one(r);
+		struct BOOTLE_SIGMA1 *P = BOOTLE_SIGMA1_new(ctx->curve, ctx->bnctx, b, 2, 2, r);
+		BOOTLE_SIGMA1_free(P);
+		BN_free(b[0][0]);
+		BN_free(b[0][1]);
+		BN_free(b[1][0]);
+		BN_free(b[1][1]);
+		free(b[0]);
+		free(b[1]);
+		free(b);
+		BN_free(r);
+	}
+	puts("done");
 	RTRS_free(ctx);
 	BN_free(sk[0]);
 	BN_free(sk[1]);
